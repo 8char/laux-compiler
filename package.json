@@ -1,0 +1,50 @@
+{
+  "name": "lau-compiler",
+  "version": "2.0.0",
+  "description": "LAU superset of Lua which compiles LAU code to Lua",
+  "main": "src/app.js",
+  "private": true,
+  "dependencies": {
+    "any-promise": "^1.3.0",
+    "bluebird": "^3.4.6",
+    "chai": "^3.5.0",
+    "chalk": "^1.1.3",
+    "chokidar": "^1.6.1",
+    "commander": "^2.9.0",
+    "detect-indent": "^5.0.0",
+    "extend": "^3.0.0",
+    "fast-glob": "^3.2.4",
+    "fs-jetpack": "^0.11.0",
+    "indent-string": "^2.1.0",
+    "lodash": "^4.17.4",
+    "luamin": "^1.0.4",
+    "mkdirp": "^0.5.1",
+    "mkdirp-then": "^1.2.0",
+    "mocha": "^3.2.0",
+    "underscore": "^1.8.3",
+    "walk": "^2.3.9"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-core": "^6.18.2",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-transform-class-properties": "^6.23.0",
+    "babel-preset-es2015": "^6.18.0",
+    "chai-subset": "^1.4.0"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --reporter spec --compilers js:babel-core/register",
+    "start": "node index.js watch ./laux ./lua",
+    "build": "./node_modules/.bin/babel src --out-dir dist",
+    "dev": "nodemon index.js watch ./laux ./lua -a"
+  },
+  "files": [
+    "dist/",
+    "bin/"
+  ],
+  "author": "Metamist",
+  "license": "ISC",
+  "bin": {
+    "lauxc": "./bin/lauxc"
+  }
+}

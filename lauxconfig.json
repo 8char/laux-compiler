@@ -1,0 +1,7 @@
+{
+  "path": {
+    "input": "./laux",
+    "output": "./lua"
+  },
+  "merges": []
+}

@@ -1,0 +1,9 @@
+class Test
+  public constructor()
+    self:receive("CreateTag", self.receiveCreateTag)
+  end
+
+  private receiveCreateTag(ply)
+    local x
+  end
+end
