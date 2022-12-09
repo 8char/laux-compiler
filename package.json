@@ -33,9 +33,9 @@
     "chai-subset": "^1.4.0"
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha --reporter spec --compilers js:babel-core/register",
+    "test": "mocha --reporter spec --compilers js:babel-core/register",
     "start": "node index.js watch ./laux ./lua",
-    "build": "./node_modules/.bin/babel src --out-dir dist",
+    "build": "babel src --out-dir dist",
     "dev": "nodemon index.js watch ./laux ./lua -a"
   },
   "files": [
