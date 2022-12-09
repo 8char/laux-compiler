@@ -9,10 +9,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/npm@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          args: install
-      - uses: actions/npm@v1
-        with:
-          args: run test
+          node-version: 16
+          cache: 'npm'
+      - run: npm intsall
+      - run: npm run test
