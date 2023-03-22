@@ -37,12 +37,12 @@ An example of a config file would be this.
   },
   "merges": [
     {
-      "filesGlob": [ "xenin_jobcreator/fields/**/*.laux"],
-      "output": "xenin_jobcreator/fields"
+      "filesGlob": [ "atlas_jobcreator/fields/**/*.laux"],
+      "output": "atlas_jobcreator/fields"
     },
     {
-      "filesGlob": [ "xenin_jobcreator/currencies/**/*.laux"],
-      "output": "xenin_jobcreator/currencies"
+      "filesGlob": [ "atlas_jobcreator/currencies/**/*.laux"],
+      "output": "atlas_jobcreator/currencies"
     }
   ]
 }
@@ -180,7 +180,7 @@ end
 ```
 Classes by default are private, so we can make it public by using the public keyword
 ```lua
-public class XeninShop.Items.Health extends XeninShop.Item
+public class AtlasShop.Items.Health extends AtlasShop.Item
   -- Since this is a public class you don't need a type
   -- __type will automatically return the name of the class
 end

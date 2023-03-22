@@ -1497,7 +1497,7 @@ var compiler = {
               [
                 b.callExpression(
                   b.memberExpression(
-                    b.identifier("XeninUI"),
+                    b.identifier("AtlasUI"),
                     ".",
                     b.memberExpression(
                       b.identifier("Promises"),
