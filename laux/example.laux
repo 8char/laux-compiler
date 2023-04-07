@@ -6,4 +6,8 @@ class Test
   private receiveCreateTag(ply)
     local x
   end
+
+  async greetPerson(personName: string)
+    return `Hello ${personName}`
+  end
 end
