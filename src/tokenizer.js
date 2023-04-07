@@ -184,6 +184,14 @@ var index,
 // is always enabled to provide proper debug messages).
 //
 // `lex()` starts lexing and returns the following token in the stream.
+/**
+  The lexer, or the tokenizer reads the input string character by character and derives a token left-right.
+  To be as efficient as possible the lexer prioritizes the common cases such as identifiers.
+  It also works with character codes instead of characters as string comparisons was the biggest bottleneck of the parser.
+  If options.comments is enabled, all comments encountered will be stored in an array which later will be appended to the chunk object.
+  If disabled, they will simply be disregarded.
+  @returns {Object} An object containing the value and its position in the input string.
+*/
 function lex() {
   skipWhiteSpace();
 
@@ -331,6 +339,12 @@ function lex() {
 // This is actually done by setting the current token to the lookahead and
 // reading in the new lookahead token.
 
+/**
+  Sets the current token to the lookahead and reads in the new lookahead token.
+  @function
+  @returns {void}
+*/
+
 function next() {
   previousToken = token;
   token = lookahead;
@@ -340,6 +354,12 @@ function next() {
 // Whitespace has no semantic meaning in lua so simply skip ahead while
 // tracking the encounted newlines. Any kind of eol sequence is counted as a
 // single line.
+
+/**
+  Skips ahead while tracking the encountered newlines, as whitespace has no semantic meaning in lua.
+  @function
+  @returns {boolean} - true if an end of line sequence is encountered, false otherwise
+*/  
 
 function consumeEOL() {
   var charCode = input.charCodeAt(index),
@@ -357,6 +377,12 @@ function consumeEOL() {
   }
   return false;
 }
+
+/**
+  Scans for the end of file token and returns a new Token object with the appropriate information.
+  @function
+  @returns {Token} - the new Token object for the end of file
+*/
 
 function scanEOF() {
   return new Token(
@@ -376,6 +402,11 @@ function scanEOF() {
 // Identifiers, keywords, booleans and nil all look the same syntax wise. We
 // simply go through them one by one and defaulting to an identifier if no
 // previous case matched.
+
+/**
+  Scan an identifier or keyword token from the input string.
+  @returns {Token} The resulting token.
+*/
 
 function scanIdentifierOrKeyword() {
   var value, type;
@@ -415,6 +446,13 @@ function scanIdentifierOrKeyword() {
 // Once a punctuator reaches this function it should already have been
 // validated so we simply return it as a token.
 
+/**
+  Scan a punctuator token from the input string.
+  @param {string} value - The value of the punctuator.
+  @returns {Token} The resulting token.
+*/
+
+
 function scanPunctuator(value) {
   index += value.length;
 
@@ -434,6 +472,11 @@ function scanPunctuator(value) {
 
 // A vararg literal consists of three dots.
 
+/**
+  Scan a vararg literal token from the input string.
+  @returns {Token} The resulting token.
+*/
+
 function scanVarargLiteral() {
   index += 3;
   return new Token(
@@ -451,6 +494,12 @@ function scanVarargLiteral() {
 }
 
 // Find the string literal by matching the delimiter marks used.
+
+/**
+  Scan a string literal token from the input string.
+  @param {boolean} isTemplate - Whether or not the string is a template.
+  @returns {Token} The resulting token.
+*/
 
 function scanStringLiteral(isTemplate) {
   var delimiter = input.charCodeAt(index++),
@@ -495,6 +544,11 @@ function scanStringLiteral(isTemplate) {
 // literal, if it doesn't validate into a valid multiline string, throw an
 // exception.
 
+/**
+  Scan a long string literal token from the input string.
+  @returns {Token} The resulting token.
+*/
+
 function scanLongStringLiteral() {
   var string = readLongString();
   // Fail if it's not a multiline literal.
@@ -519,6 +573,11 @@ function scanLongStringLiteral() {
 // later on in the process.
 //
 // If a hexadecimal number is encountered, it will be converted.
+
+/**
+  Scan a numeric literal token from the input string.
+  @returns {Token} The resulting token.
+*/
 
 function scanNumericLiteral() {
   var character = input.charAt(index),
@@ -550,6 +609,11 @@ function scanNumericLiteral() {
 //     Fraction := toDec(fraction) / 16 ^ fractionCount
 //     BinaryExp := 2 ^ binaryExp
 //     Number := ( Digit + Fraction ) * BinaryExp
+
+/**
+  Reads a Lua hexadecimal literal.
+  @returns {number} The hexadecimal literal as a number.
+*/
 
 function readHexLiteral() {
   var fraction = 0, // defaults to 0 as it gets summed
@@ -608,6 +672,11 @@ function readHexLiteral() {
 // this we check where the token ends and then parse it with native
 // functions.
 
+/**
+  Reads a Lua decimal literal.
+  @returns {number} The decimal literal as a number.
+*/
+
 function readDecLiteral() {
   while (isDecDigit(input.charCodeAt(index))) index++;
   // Fraction part is optional
@@ -633,6 +702,11 @@ function readDecLiteral() {
 
 
 // Translate escape sequences to the actual characters.
+
+/**
+  Translates escape sequences to the actual characters.
+  @returns {string} The unescaped character sequence.
+*/
 
 function readEscapeSequence() {
   var sequenceStart = index;
@@ -780,64 +854,188 @@ function skipWhiteSpace() {
 
 // ### Validation functions
 
+const WhiteSpaceCharCode = {
+  HORIZONTAL_TAB: 9,
+  SPACE: 32,
+  LINE_TABULATION: 0xB,
+  FORM_FEED: 0xC
+};
+
+/**
+ * Checks if a given character code represents a white space character.
+ *
+ * @param {number} charCode - The character code to check.
+ * @returns {boolean} Whether the character is a white space character.
+ */
+
 function isWhiteSpace(charCode) {
-  return 9 === charCode || 32 === charCode || 0xB === charCode || 0xC === charCode;
+  return charCode === WhiteSpaceCharCode.HORIZONTAL_TAB ||
+         charCode === WhiteSpaceCharCode.SPACE ||
+         charCode === WhiteSpaceCharCode.LINE_TABULATION ||
+         charCode === WhiteSpaceCharCode.FORM_FEED;
 }
+
+const LineTerminatorCharCode = {
+  LINE_FEED: 10,
+  CARRIAGE_RETURN: 13
+};
+
+/**
+ * Checks if a given character code represents a line terminator character.
+ *
+ * @param {number} charCode - The character code to check.
+ * @returns {boolean} Whether the character is a line terminator character.
+ */
 
 function isLineTerminator(charCode) {
-  return 10 === charCode || 13 === charCode;
+  return charCode === LineTerminatorCharCode.LINE_FEED ||
+         charCode === LineTerminatorCharCode.CARRIAGE_RETURN;
 }
+
+const DecDigitCharCode = {
+  ZERO: 48,
+  NINE: 57
+};
+
+/**
+ * Checks if a given character code represents a decimal digit character.
+ *
+ * @param {number} charCode - The character code to check.
+ * @returns {boolean} Whether the character is a decimal digit character.
+ */
 
 function isDecDigit(charCode) {
-  return charCode >= 48 && charCode <= 57;
+  return charCode >= DecDigitCharCode.ZERO && charCode <= DecDigitCharCode.NINE;
 }
 
+const HexDigitCharCode = {
+  ZERO: 48,
+  NINE: 57,
+  LOWERCASE_A: 97,
+  LOWERCASE_F: 102,
+  UPPERCASE_A: 65,
+  UPPERCASE_F: 70
+};
+
+/**
+ * Checks if a given character code represents a hexadecimal digit character.
+ *
+ * @param {number} charCode - The character code to check.
+ * @returns {boolean} Whether the character is a hexadecimal digit character.
+ */
+
 function isHexDigit(charCode) {
-  return (charCode >= 48 && charCode <= 57) || (charCode >= 97 && charCode <= 102) || (charCode >= 65 && charCode <= 70);
+  return (charCode >= HexDigitCharCode.ZERO && charCode <= HexDigitCharCode.NINE) ||
+         (charCode >= HexDigitCharCode.LOWERCASE_A && charCode <= HexDigitCharCode.LOWERCASE_F) ||
+         (charCode >= HexDigitCharCode.UPPERCASE_A && charCode <= HexDigitCharCode.UPPERCASE_F);
 }
 
 // From [Lua 5.2](http://www.lua.org/manual/5.2/manual.html#8.1) onwards
 // identifiers cannot use locale-dependet letters.
 
+const IdentifierStartCharCode = {
+  LOWERCASE_A: 97,
+  LOWERCASE_Z: 122,
+  UPPERCASE_A: 65,
+  UPPERCASE_Z: 90,
+  UNDERSCORE: 95
+};
+
+/**
+ * Checks if a given character code represents the start of a valid identifier.
+ *
+ * @param {number} charCode - The character code to check.
+ * @returns {boolean} Whether the character is the start of a valid identifier.
+ */
+
 function isIdentifierStart(charCode) {
-  return (charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122) || 95 === charCode;
+  return (charCode >= IdentifierStartCharCode.UPPERCASE_A && charCode <= IdentifierStartCharCode.UPPERCASE_Z) ||
+         (charCode >= IdentifierStartCharCode.LOWERCASE_A && charCode <= IdentifierStartCharCode.LOWERCASE_Z) ||
+         charCode === IdentifierStartCharCode.UNDERSCORE;
 }
 
+const IdentifierPartCharCode = {
+  LOWERCASE_A: 97,
+  LOWERCASE_Z: 122,
+  UPPERCASE_A: 65,
+  UPPERCASE_Z: 90,
+  DIGIT_0: 48,
+  DIGIT_9: 57,
+  UNDERSCORE: 95
+};
+
+/**
+ * Checks if a given character code represents a valid part of an identifier.
+ *
+ * @param {number} charCode - The character code to check.
+ * @returns {boolean} Whether the character is a valid part of an identifier.
+ */
+
 function isIdentifierPart(charCode) {
-  return (charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122) || 95 === charCode || (charCode >= 48 && charCode <= 57);
+  return (charCode >= IdentifierPartCharCode.UPPERCASE_A && charCode <= IdentifierPartCharCode.UPPERCASE_Z) ||
+         (charCode >= IdentifierPartCharCode.LOWERCASE_A && charCode <= IdentifierPartCharCode.LOWERCASE_Z) ||
+         (charCode >= IdentifierPartCharCode.DIGIT_0 && charCode <= IdentifierPartCharCode.DIGIT_9) ||
+         charCode === IdentifierPartCharCode.UNDERSCORE;
 }
+
 
 // [3.1 Lexical Conventions](http://www.lua.org/manual/5.2/manual.html#3.1)
 //
 // `true`, `false` and `nil` will not be considered keywords, but literals.
 
-function isKeyword(id) {
-  switch (id.length) {
-    case 2:
-      return "do" === id || "if" === id || "in" === id || "of" === id || "or" === id || "&&" === id || "||" === id || "??" === id;
-    case 3:
-      return "and" === id || "end" === id || "for" === id || "not" === id;
-    case 4:
-      return "else" === id || "goto" === id || "then" === id || "self" == id;
-    case 5:
-      return "break" === id || "local" === id || "until" === id || "while" === id || "class" === id || "super" === id || "await" === id || "async" === id || "throw" === id;
-    case 6:
-      return "elseif" === id || "repeat" === id || "return" === id || "static" === id || "public" === id || "stopif" === id || "import" === id;
-    case 7:
-      return "extends" === id || "breakif" === id
-    case 8:
-      return "continue" === id || "function" === id
-    case 10:
-      return "continueif" === id
+const keywords = [
+  "do", "if", "in", "of", "or", "&&", "||", "??",
+  "and", "end", "for", "not",
+  "else", "goto", "then", "self",
+  "break", "local", "until", "while", "class", "super", "await", "async", "throw",
+  "elseif", "repeat", "return", "static", "public", "stopif", "import",
+  "extends", "breakif",
+  "continue", "function",
+  "continueif"
+];
+
+const keywordsByLength = keywords.reduce((acc, keyword) => {
+  const length = keyword.length;
+  if (!acc[length]) {
+    acc[length] = [];
   }
-  return false;
+  acc[length].push(keyword);
+  return acc;
+}, {});
+
+/**
+ * Checks if a given identifier is a keyword in the Lua language.
+ *
+ * @param {string} id - The identifier to check.
+ * @returns {boolean} Whether the identifier is a keyword.
+ */
+
+function isKeyword(id) {
+  const keywordList = keywordsByLength[id.length];
+  return keywordList ? keywordList.includes(id) : false;
 }
+
+
+/**
+ * Checks if a given token is a unary operator.
+ *
+ * @param {Token} token - The token to check.
+ * @returns {boolean} Whether the token is a unary operator.
+ */
 
 function isUnary(token) {
   if (Punctuator === token.type) return "#-~!".indexOf(token.value) >= 0;
   if (Keyword === token.type) return "not" === token.value;
   return false;
 }
+
+/**
+ * Tokenizes a given input string according to the Lua language rules.
+ *
+ * @param {string} [_input=""] - The input string to tokenize.
+ * @param {TokenizeOptions} [_options] - Options to configure the tokenizer.
+ * @returns {Token[]} An array of tokens representing the input string.
+ */
 
 function tokenize(_input, _options) {
   if ("undefined" === typeof _options && "object" === typeof _input) {

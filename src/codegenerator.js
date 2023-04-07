@@ -18,28 +18,57 @@ function commaSeparatorNewline() {
   if (!this.endsWith("\n")) this.space();
 }
 
+/**
+
+A class for generating Lua code from an Abstract Syntax Tree (AST).
+@class
+*/
+
 export default class CodeGenerator {
+
   nodes = {
+    /**
+      Generate code for a File node.
+      @param {object} node - The File node to generate code for.
+    */
+
     File(node) {
       this.print(node.chunk);
     },
 
+    /**
+      Generate code for a Chunk node.
+      @param {object} node - The Chunk node to generate code for.
+    */
     Chunk(node) {
       if (node.body.length)   {
         this.printSequence(node.body);
       }
     },
 
-    // Statements
+    /**
+      Generate code for a LabelStatement node.
+      @param {object} node - The LabelStatement node to generate code for.
+    */
     LabelStatement(node) {
       this.token("::");
       this.print(node.label)
       this.token("::");
     },
+
+    /**
+      Generate code for a GotoStatement node.
+      @param {object} node - The GotoStatement node to generate code for.
+    */
     GotoStatement(node) {
       this.word("goto");
       this.print(node.label);
     },
+
+    /**
+    Generate code for a BreakStatement node.
+    @param {object} node - The BreakStatement node to generate code for.
+    */
     BreakStatement(node) {
       this.word("break");
     },
