@@ -1010,10 +1010,7 @@ const keywordsByLength = keywords.reduce((acc, keyword) => {
  * @returns {boolean} Whether the identifier is a keyword.
  */
 
-function isKeyword(id) {
-  const keywordList = keywordsByLength[id.length];
-  return keywordList ? keywordList.includes(id) : false;
-}
+const isKeyword = (id) => keywordsByLength[id.length] ? keywordsByLength[id.length].includes(id) : false;
 
 
 /**
