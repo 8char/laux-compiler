@@ -24,6 +24,14 @@ var defaultOptions = {
   debug: false
 };
 
+/**
+  Creates a unique identifier string for a LAU variable
+  @param {Object} expression - The AST node for the expression
+  @param {boolean} isLocal - Whether the identifier should be local to the scope
+  @param {string} name - An optional name to include in the identifier
+  @returns {Object} - The AST node for the identifier
+*/
+
 var generateLAUIdentifier = function(expression, isLocal, name) {
 	var id = lauIdx++;
 	var str = `__lauxi${id}`;
@@ -32,6 +40,13 @@ var generateLAUIdentifier = function(expression, isLocal, name) {
 
   return b.identifier(str, true);
 };
+
+/**
+  Generates a LAU assert statement with the given expression and message
+  @param {Object} expression - The AST node for the expression to check
+  @param {string} message - The error message to display if the assertion fails
+  @returns {Object} - The AST node for the assert statement
+*/
 
 var generateAssert = function(expression, message) {
   var assertId = b.identifier("assert");
@@ -42,6 +57,12 @@ var generateAssert = function(expression, message) {
   return b.callStatement(callExp)
 };
 
+/**
+  Returns the identifier for a utility function, creating it if it doesn't already exist
+  @param {string} name - The name of the utility function
+  @returns {Object} - The AST node for the identifier
+*/
+
 var getUtilityFunctionIdentifier = function(name) {
 	if (!utilFunctions[name]) {
 		utilFunctions[name] = generateLAUIdentifier(null, true, name);
@@ -49,6 +70,11 @@ var getUtilityFunctionIdentifier = function(name) {
 
 	return utilFunctions[name];
 }
+
+/**
+  Generates all utility functions defined in utilFunctionFactory and adds them to the program body
+  @returns {Array} - An array of AST nodes for the generated utility functions
+*/
 
 var generateUtilityFunctions = function() {
   var body = [];
@@ -63,6 +89,13 @@ var generateUtilityFunctions = function() {
   return body;
 }
 
+/**
+  Attaches location information from an original AST node to a compiled AST node
+  @param {Object} node - The original AST node to copy location information from
+  @param {Object} compiled - The compiled AST node to add location information to
+  @returns {Object} - The compiled AST node with location information added
+*/
+
 var attachLocations = function(node, compiled) {
   if (node) {
     if ("undefined" !== typeof node.loc) compiled.loc = node.loc;
@@ -73,6 +106,14 @@ var attachLocations = function(node, compiled) {
 
   return compiled;
 };
+
+/**
+  Wraps a scope in debug statements, which print the start and end of the scope
+  and catch any errors that occur within it
+  @param {Object} node - The AST node for the scope
+  @param {Array} scope - The array of AST nodes that make up the scope
+  @returns {Array} - The wrapped scope as an array of AST nodes
+*/
 
 var debugWrapScope = function(node, scope) {
   if (!options.debug) return scope;
@@ -164,6 +205,12 @@ var debugWrapScope = function(node, scope) {
   ];
 };
 
+/**
+  Compiles a list of statements into an array of AST nodes.
+  @param {Array} statements - An array of statements to compile.
+  @returns {Array} An array of compiled AST nodes.
+*/
+
 var compileStatementList = function(statements) {
   var body = [];
   _.each(statements, (statement) => {
@@ -182,6 +229,11 @@ var compileStatementList = function(statements) {
   return body;
 };
 
+/**
+  Compiles a statement into its corresponding AST node.
+  @param {Object} statement - The statement object to be compiled
+  @returns {Object} The compiled AST node for the given statement
+*/
 
 var compileStatement = function(statement) {
   if (!statement) return;
@@ -719,6 +771,12 @@ var compileStatement = function(statement) {
   }
 }
 
+/**
+  Compiles the given expression.
+  @param {Object} expression - The expression to compile.
+  @returns {*} - The compiled expression.
+*/
+
 var compileExpression = function(expression) {
   if (!expression) return;
 
@@ -1021,6 +1079,15 @@ var compileExpression = function(expression) {
   }
 };
 
+/**
+  Compiles a function statement
+  @param {Object} statement - the statement object to be compiled
+  @param {Object} statement.identifier - the function identifier
+  @param {Array} statement.parameters - an array of parameters for the function
+  @param {Array} statement.body - the body of the function
+  @returns {Object} - the compiled function declaration
+*/
+
 function compileFunctionStatement(statement) {
   var body = debugWrapScope(statement, compileStatementList(statement.body));
 
@@ -1165,6 +1232,13 @@ function compileFunctionStatement(statement) {
     )
   );
 }
+
+/**
+  Compiles a safe member expression into a binary expression that checks if all the base objects exist before
+  attempting to access the member.
+  @param {Object} expression - The expression to compile.
+  @returns {Object} - A binary expression that checks if all the base objects exist before attempting to access the member.
+*/
 
 function compileSafeMemberExpression(expression) {
   var bases = [];
