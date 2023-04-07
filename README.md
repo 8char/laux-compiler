@@ -6,7 +6,7 @@
   <h3 align="center" style="margin-bottom: 0;">LAUX - GLUA Transpiler</h3>
   <sup>( LAUX )</sup>
   <p align="center">
-    This is a fork of LAU made by [Metamist (Alexander Arvidsson)](https://github.com/alexanderarvidsson).
+    This is a fork of LAU made by <a href="https://github.com/alexanderarvidsson" target="_blank">Metamist (Alexander Arvidsson)</a>
     LAU as a project is dead. This fork is an attempt to revitalise Metamist's project, with a few changes to syntax & functionality.
     <br />
     <br />
