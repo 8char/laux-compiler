@@ -11,16 +11,12 @@ You will need to install [Node.js](https://nodejs.org) to use this.
 
 Open up a terminal of your choice, and type this.
 ```bash
-cd "path to directory with this in"
-npm install
-npm run build
-npm link
+> npm i -g laux-compiler
 ```
 
 To transpile you simply go the folder your project belongs to
 ```bash
-cd "project folder"
-lauxc watch ./laux ./lua
+> lauxc watch ./laux ./lua
 ```
 
 ## Workspaces
@@ -52,11 +48,11 @@ To actually use the merge features, you would have to use the release option, wh
 
 ### No options
 ```bash
-lauxc workspace
+> lauxc workspace
 ```
 ### Release that merges files
 ```bash
-lauxc workspace -r
+> lauxc workspace -r
 ```
 
 # What does it add?
