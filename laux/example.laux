@@ -4,7 +4,9 @@ class Test
   end
 
   private receiveCreateTag(ply)
-    local x
+    local a = { 2, 3 }
+    local b = { 1, ...a, 4 }
+    PrintTable(b) -- { 1, 2, 3, 4 }
   end
 
   async greetPerson(personName: string)
