@@ -1,7 +1,7 @@
 <br />
 <div align="center">
 
-  <img src="https://i.imgur.com/VN65yYk.png" width="256" height="256"/>
+  <img src="https://i.imgur.com/0SR2KVb.png" width="256" height="256"/>
 
   <h3 align="center" style="margin-bottom: 0;">LAUX - GLUA Transpiler</h3>
   <sup>( LAUX )</sup>
