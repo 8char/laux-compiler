@@ -1,5 +1,5 @@
 {
-  "name": "lau-compiler",
+  "name": "laux-compiler",
   "version": "2.0.0",
   "description": "LAU superset of Lua which compiles LAU code to Lua",
   "main": "src/app.js",
@@ -36,15 +36,30 @@
     "test": "mocha --reporter spec --compilers js:babel-core/register",
     "start": "node index.js watch ./laux ./lua",
     "build": "babel src --out-dir dist",
+    "prepublish": "npm run build",
     "dev": "nodemon index.js watch ./laux ./lua -a"
   },
   "files": [
     "dist/",
     "bin/"
   ],
-  "author": "Metamist",
-  "license": "ISC",
+  "author": "Atlas/8char",
+  "license": "MIT",
   "bin": {
-    "lauxc": "./bin/lauxc"
-  }
+    "lauxc": "bin/lauxc"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/8char/laux-compiler.git"
+  },
+  "keywords": [
+    "transpiler"
+  ],
+  "bugs": {
+    "url": "https://github.com/8char/laux-compiler/issues"
+  },
+  "homepage": "https://github.com/8char/laux-compiler#readme"
 }
