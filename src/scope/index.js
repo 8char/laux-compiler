@@ -1,27 +1,41 @@
-import includes from "lodash/includes";
-import repeat from "lodash/repeat";
-import defaults from "lodash/defaults";
-// import Renamer from "./lib/renamer";
-import NodePath from "../path";
-import traverse from "../visitor";
-import Binding from "./binding";
-import * as t from "../types";
-import { scope as scopeCache } from "../cache";
+import includes from 'lodash/includes';
+import repeat from 'lodash/repeat';
+import defaults from 'lodash/defaults';
+// import Renamer from './lib/renamer';
+// import NodePath from '../path';
+import traverse from '../visitor';
+import Binding from './binding';
+import * as t from '../types';
+import { scope as scopeCache } from '../cache';
 
-let _crawlCallsCount = 0;
+// let crawlCallsCount = 0;
+
+function checkBlockScopedCollisions(/** local, kind, name, id */) {
+  // TODO: Actually implement this one
+  // if (kind === 'param') return undefined;
+  return undefined;
+}
 
 function getCache(path, parentScope, self) {
   const scopes = scopeCache.get(path.node) || [];
 
-  for (const scope of scopes) {
-    if (scope.parent === parentScope && scope.path === path) return scope;
-  }
+  let foundScope;
+
+  scopes.forEach((scope) => {
+    if (scope.parent === parentScope && scope.path === path) {
+      foundScope = scope;
+    }
+  });
+
+  if (foundScope) return foundScope;
 
   scopes.push(self);
 
   if (!scopeCache.has(path.node)) {
     scopeCache.set(path.node, scopes);
   }
+
+  return undefined;
 }
 
 // Recursively gathers the identifying names of a node.
@@ -29,11 +43,9 @@ function gatherNodeParts(node, parts) {
   if (t.isMemberExpression(node)) {
     gatherNodeParts(node.left, parts);
     gatherNodeParts(node.right, parts);
-  }
-  else if (t.isIdentifier(node)) {
+  } else if (t.isIdentifier(node)) {
     parts.push(node.value);
-  }
-  else if (t.isCallExpression(node)) {
+  } else if (t.isCallExpression(node)) {
     gatherNodeParts(node.base, parts);
   }
 }
@@ -46,50 +58,46 @@ const collectorVisitor = {
   },
 
   ForOfStatement(path, state) {
-    var variables = path.get("variables");
-    for (var variable of variables) {
-      path.scope.getBlockParent().registerBinding("var", variable);
-
+    const variables = path.get('variables');
+    variables.forEach((variable) => {
+      path.scope.getBlockParent().registerBinding('var', variable);
       state.constantViolations.push(variable);
-    }
+    });
   },
 
   ForGenericStatement(path, state) {
-    var variables = path.get("variables");
-    for (var variable of variables) {
-      path.scope.getBlockParent().registerBinding("var", variable);
-
+    const variables = path.get('variables');
+    variables.forEach((variable) => {
+      path.scope.getBlockParent().registerBinding('var', variable);
       state.constantViolations.push(variable);
-    }
+    });
   },
 
   ForNumericStatement(path, state) {
-    var variable = path.get("variable");
+    const variable = path.get('variable');
     if (variable) {
-      path.scope.getBlockParent().registerBinding("var", variable);
-
+      path.scope.getBlockParent().registerBinding('var', variable);
       state.constantViolations.push(variable);
     }
   },
 
-  BlockScoped(path, state) {
-    let scope = path.scope;
+  BlockScoped(path) {
+    let { scope } = path;
     if (scope.path === path) scope = scope.parent;
     scope.getBlockParent().registerDeclaration(path);
   },
 
-  ClassStatement(path, state) {
+  ClassStatement(path) {
     const id = path.node.identifier;
     if (!id) return;
 
-    var name = id.name;
-    var binding = path.scope.getBinding(name);
-    if (binding)
-      path.scope.bindings[name] = path.scope.getBinding(name);
+    const { name } = id;
+    const binding = path.scope.getBinding(name);
+    if (binding) path.scope.bindings[name] = path.scope.getBinding(name);
   },
 
   MutationStatement(path, state) {
-    state.constantViolations.push(path.get("expression"));
+    state.constantViolations.push(path.get('expression'));
   },
 
   AssignmentStatement(path, state) {
@@ -98,20 +106,19 @@ const collectorVisitor = {
 
   ReferencedIdentifier(path, state) {
     state.references.push(path);
-  }
-}
+  },
+};
 
-let uid = 0;
 export default class Scope {
   constructor(path, parentScope) {
-    if (parentScope && parentScope.block == path.node) {
+    if (parentScope && parentScope.block === path.node) {
       return parentScope;
     }
 
     const cached = getCache(path, parentScope, this);
     if (cached) return cached;
 
-    this.uid = uid++;
+    this.uid += 1;
     this.parent = parentScope;
     this.hub = path.hub;
 
@@ -123,32 +130,37 @@ export default class Scope {
   }
 
   static globals = [];
+
   static contextVariables = [];
 
   traverse(node, visitors, state) {
     traverse(node, visitors, state, this, this.path);
   }
 
-  generateDeclaredUidIdentifier(name = "temp") {
+  generateDeclaredUidIdentifier(name = 'temp') {
     const id = this.generateUidIdentifier(name);
     this.push({ id });
     return id;
   }
 
-  generateUidIdentifier(name = "temp") {
+  generateUidIdentifier(name = 'temp') {
     return t.identifier(this.generateUid(name));
   }
 
-  generateUid(name = "temp") {
-    name = t.toIdentifier(name).replace(/^_+/, "").replace(/[0-9]+$/g, "");
+  generateUid(name = 'temp') {
+    name = t.toIdentifier(name).replace(/^_+/, '').replace(/[0-9]+$/g, '');
 
     let uid;
     let i = 0;
     do {
       uid = this._generateUid(name, i);
-      i++;
-    }
-    while (this.hasLabel(uid) || this.hasBinding(uid) || this.hasGlobal(uid) || this.hasReference(uid));
+      i += 1;
+    } while (
+      this.hasLabel(uid)
+      || this.hasBinding(uid)
+      || this.hasGlobal(uid)
+      || this.hasReference(uid)
+    );
 
     const chunk = this.getChunkParent();
     chunk.references[uid] = true;
@@ -163,19 +175,19 @@ export default class Scope {
     return `_${id}`;
   }
 
-  generateUidIdentifierBasedOnNode(parent, defaultName)   {
-    let node = parent;
+  generateUidIdentifierBasedOnNode(parent, defaultName) {
+    const node = parent;
 
     const parts = [];
     gatherNodeParts(node, parts);
 
-    let id = parts.join("$");
-    id = id.replace(/^_/, "") || defaultName || "ref";
+    let id = parts.join('$');
+    id = id.replace(/^_/, '') || defaultName || 'ref';
 
     return this.generateUidIdentifier(id.slice(0, 20));
   }
 
-  isStatic(node)   {
+  isStatic(node) {
     // Check self identifier
 
     if (t.isIdentifier(node)) {
@@ -183,24 +195,21 @@ export default class Scope {
       if (binding) {
         return binding.constant;
       }
-      else {
-        return this.hasBinding(node.name);
-      }
+
+      return this.hasBinding(node.name);
     }
+
+    return undefined;
   }
 
-  checkBlockScopedCollisions(local, kind, name, id) {
-    if (kind === "param") return;
-  }
-
-  rename(oldName, newName, block) {
-    const binding = this.getBinding(oldName);
-    if (binding) {
-      newName = newName || this.generateUidIdentifier(oldName).name;
-      // TODO: Call renamer class
-      // return new Renamer(binding, oldName, newName).rename(block);
-    }
-  }
+  // rename(oldName, newName, block) {
+  //   const binding = this.getBinding(oldName);
+  //   if (binding) {
+  //     newName = newName || this.generateUidIdentifier(oldName).name;
+  //     // TODO: Call renamer class
+  //     // return new Renamer(binding, oldName, newName).rename(block);
+  //   }
+  // }
 
   _renameFromMap(map, oldName, newName, value) {
     if (map[oldName]) {
@@ -210,23 +219,22 @@ export default class Scope {
   }
 
   dump() {
-    const sep = repeat("-", 60);
+    const sep = repeat('-', 60);
 
     console.log(sep);
     let scope = this;
     do {
-      console.log("#", scope.block.type);
+      console.log('#', scope.block.type);
       for (const name in scope.bindings) {
         const binding = scope.bindings[name];
-        console.log(" -", name, {
+        console.log(' -', name, {
           constant: binding.constant,
           references: binding.references,
           violations: binding.constantViolations.length,
           kind: binding.kind
         });
       }
-    }
-    while (scope = scope.parent);
+    } while (scope = scope.parent);
     console.log(sep);
   }
 
@@ -235,16 +243,16 @@ export default class Scope {
 
     if (t.isIdentifier(node)) {
       const binding = this.getBinding(node.name);
-      if (binding && binding.constant && binding.path.isGenericType("Array")) return node;
+      if (binding && binding.constant && binding.path.isGenericType('Array')) return node;
     }
 
-    let helperName = "toArray";
+    let helperName = 'toArray';
     const args = [node];
     if (i === true) {
-      helperName = "toConsumableArray";
+      helperName = 'toConsumableArray';
     }
 
-    // TODO finish
+    // TODO: finish
   }
 
   hasLabel(name) {
@@ -261,17 +269,17 @@ export default class Scope {
 
   registerDeclaration(path) {
     if (path.isLocalStatement()) {
-      const variables = path.get("variables");
+      const variables = path.get('variables');
 
       for (const variable of variables) {
-        this.registerBinding("var", variable)
+        this.registerBinding('var', variable)
       }
     }
     else if (path.isClassStatement()) {
-      this.registerBinding("var", path);
+      this.registerBinding('var', path);
     }
     else {
-      this.registerBinding("unknown", path);
+      this.registerBinding('unknown', path);
     }
   }
 
@@ -287,7 +295,7 @@ export default class Scope {
   }
 
   registerBinding(kind, path, bindingPath) {
-    if (!kind) throw new ReferenceError("no `kind`");
+    if (!kind) throw new ReferenceError('no `kind`');
 
     // TODO: Register variable declarations
     /*
@@ -304,7 +312,7 @@ export default class Scope {
         if (local) {
           if (local.identifier === id) continue;
 
-          this.checkBlockScopedCollisions(local, kind, name, id);
+          checkBlockScopedCollisions(local, kind, name, id);
         }
 
         parent.references[name] = true;
@@ -391,12 +399,12 @@ export default class Scope {
   }
 
   crawl() {
-    _crawlCallsCount++;
-    this._crawl();
-    _crawlCallsCount--;
+    crawlCallsCount += 1;
+    this.crawl();
+    crawlCallsCount -= 1;
   }
 
-  _crawl() {
+  crawl() {
     const path = this.path;
 
     this.references = Object.create(null);
@@ -412,9 +420,9 @@ export default class Scope {
     // TODO: Register class
 
     if (path.isFunction()) {
-      const params = path.get("parameters");
+      const params = path.get('parameters');
       for (const param of params) {
-        this.registerBinding("param", param);
+        this.registerBinding('param', param);
       }
     }
 
@@ -471,8 +479,7 @@ export default class Scope {
     let declarPath = !unique && path.getData(dataKey);
 
     // TODO: Declare
-    if (!declarPath) {
-    }
+    // if (!declarPath) {}
   }
 
   getChunkParent() {
@@ -484,7 +491,7 @@ export default class Scope {
     }
     while (scope = scope.parent);
 
-    throw new Error("We couldn't find a Function or Chunk...");
+    throw new Error('We couldn\'t find a Function or Chunk...');
   }
 
   getFunctionParent() {
@@ -494,7 +501,7 @@ export default class Scope {
         return scope;
       }
     } while (scope = scope.parent);
-    throw new Error("We couldn't find a Function or Chunk...");
+    throw new Error('We couldn\'t find a Function or Chunk...');
   }
 
   getBlockParent() {

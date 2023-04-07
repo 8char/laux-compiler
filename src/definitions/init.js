@@ -1,3 +1,3 @@
-import "./core.js";;
-import "./statements.js";;
-import "./expressions.js";;
+import './core';
+import './statements';
+import './expressions';

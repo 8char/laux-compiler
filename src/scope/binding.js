@@ -1,7 +1,13 @@
-import NodePath from "../path";
+// import NodePath from "../path";
 
 export default class Binding {
-  constructor({ existing, identifier, scope, path, kind}) {
+  constructor({
+    existing,
+    identifier,
+    scope,
+    path,
+    kind,
+  }) {
     this.identifier = identifier;
     this.scope = scope;
     this.path = path;
@@ -20,25 +26,30 @@ export default class Binding {
       this.constantViolations = [].concat(
         existing.path,
         existing.constantViolations,
-        this.constantViolations
+        this.constantViolations,
       );
     }
   }
 
   constantViolations;
+
   constant;
 
   referencePaths;
+
   referenced;
+
   references;
 
   hasDeoptedValue;
+
   hasValue;
+
   value;
 
   deoptValue() {
     this.clearValue();
-    this.hasDeoptedValue =  true;
+    this.hasDeoptedValue = true;
   }
 
   setValue(value) {
@@ -66,12 +77,12 @@ export default class Binding {
       return;
     }
     this.referenced = true;
-    this.references++;
+    this.references += 1;
     this.referencePaths.push(path);
   }
 
   dereference() {
-    this.references--;
+    this.references += 1;
     this.referenced = !!this.references;
   }
 }

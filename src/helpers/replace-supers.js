@@ -1,12 +1,11 @@
-import * as t from "../types.js";
-import * as b from "../builder.js";
+import * as t from '../types';
+import * as b from '../builder';
 
 const visitor = {
   enter(path, state) {
-    if (path.isIdentifier()) {
-    }
+    // if (path.isIdentifier()) {}
 
-    const isBareSuper = path.isCallExpression() && path.get("base").isSuperExpression();
+    const isBareSuper = path.isCallExpression() && path.get('base').isSuperExpression();
 
     const result = state.buildSuper(path);
 
@@ -25,14 +24,11 @@ const visitor = {
     if (result !== true && result) {
       if (Array.isArray(result)) {
         path.replaceWithMultiple(result);
-      }
-      else {
+      } else {
         path.replaceWith(result);
       }
 
-      let parent = path.find((p) => {
-        return p.isCallExpression() || Array.isArray(path.container)
-      });
+      const parent = path.find((p) => p.isCallExpression() || Array.isArray(path.container));
 
       if (parent.isCallExpression()) {
         parent.replaceWith(
@@ -40,22 +36,20 @@ const visitor = {
             parent.node.base,
             [
               b.selfExpression(),
-              ...parent.node.arguments
-            ]
-          )
+              ...parent.node.arguments,
+            ],
+          ),
         );
       }
-
     }
-  }
-}
+  },
+};
 
 export default class ReplaceSupers {
   constructor({ methodPath, methodNode, classRef }) {
-
     this.methodPath = methodPath;
     this.methodNode = methodNode;
-    this.classRef = classRef
+    this.classRef = classRef;
 
     this.scope = this.methodPath.scope;
 
@@ -66,50 +60,46 @@ export default class ReplaceSupers {
   getSuperProperty(property) {
     return b.memberExpression(
       this.classRef,
-      ".",
+      '.',
       b.memberExpression(
-        b.identifier("__parent"),
-        ".",
-        property
-      )
+        b.identifier('__parent'),
+        '.',
+        property,
+      ),
     );
   }
 
   buildSuper(path) {
-    const parent = path.parent;
-    const node = path.node;
+    const { node } = path;
 
     let property;
     let args;
 
     if (path.isCallExpression()) {
-      const base = node.base;
+      const { base } = node;
 
       if (t.isSuperExpression(base)) {
-        property = b.identifier("__init");
+        property = b.identifier('__init');
         args = node.arguments;
       }
-    }
-    else if (t.isMemberExpression(node) && t.isSuperExpression(node.base)) {
+    } else if (t.isMemberExpression(node) && t.isSuperExpression(node.base)) {
       property = node.identifier;
-    }
-    else if (path.isSuperExpression()) {
-      property = b.identifier("__init");
+    } else if (path.isSuperExpression()) {
+      property = b.identifier('__init');
     }
 
-    if (!property) return;
+    if (!property) return undefined;
 
     const superProperty = this.getSuperProperty(property);
 
     if (args) {
       return b.callExpression(
         superProperty,
-        args
+        args,
       );
     }
-    else {
-      return superProperty
-    }
+
+    return superProperty;
   }
 
   replace() {
