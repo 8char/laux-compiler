@@ -1,7 +1,20 @@
-# LAUX compiler
-This is a fork of LAU made by [Metamist (Alexander Arvidsson)](https://github.com/alexanderarvidsson). 
+<br />
+<div align="center">
 
-LAU as a project is dead. This fork is an attempt to revitalise Metamist's project, with a few changes to syntax & functionality.
+  <img src="https://i.imgur.com/VN65yYk.png" width="256" height="256"/>
+
+  <h3 align="center" style="margin-bottom: 0;">LAUX - GLUA Transpiler</h3>
+  <sup>( LAUX )</sup>
+  <p align="center">
+    This is a fork of LAU made by [Metamist (Alexander Arvidsson)](https://github.com/alexanderarvidsson).
+    LAU as a project is dead. This fork is an attempt to revitalise Metamist's project, with a few changes to syntax & functionality.
+    <br />
+    <br />
+    <a href="https://github.com/8char/laux-compiler/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/8char/laux-compiler/issues">Request Feature</a>
+  </p>
+</div>
 
 # What is LAUX?
 LAUX is a superset of Lua, adding syntax sugar on top of Lua. It does however still work with vanilla Lua.
