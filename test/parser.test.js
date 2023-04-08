@@ -9,6 +9,7 @@ import mutationStatementTests from './parser/mutationstatements.test';
 import shortcutExpressions from './parser/shortcutexpressions.test';
 import compilerClasses from './compiler/classes.test';
 import safeMemberTests from './parser/safemembernavigator.test';
+import forofTests from './parser/forof.test';
 
 // TODO: Implement a parse & compiler spec for Types
 // TODO: Implement a compiler spec for Mutations
@@ -55,6 +56,11 @@ describe('Parser', () => {
 
   describe('#safe member navigator expression', () => {
     it('parses stopif expression', safeMemberTests.safememberNavigator);
+  });
+
+  describe('#for of expression', () => {
+    it('parses for of expression', forofTests.forofExpression);
+    it('parses for of body expression', forofTests.forofBodyExpression);
   });
 });
 
