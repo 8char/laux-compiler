@@ -153,7 +153,7 @@ export default class Scope {
     let uid;
     let i = 0;
     do {
-      uid = this._generateUid(name, i);
+      uid = this.internalGenerateUid(name, i);
       i += 1;
     } while (
       this.hasLabel(uid)
@@ -169,7 +169,7 @@ export default class Scope {
     return uid;
   }
 
-  _generateUid(name, i) {
+  static internalGenerateUid(name, i) {
     let id = name;
     if (i > 1) id += i;
     return `_${id}`;
@@ -211,7 +211,7 @@ export default class Scope {
   //   }
   // }
 
-  _renameFromMap(map, oldName, newName, value) {
+  static internalRenameFromMap(map, oldName, newName, value) {
     if (map[oldName]) {
       map[newName] = value;
       map[oldName] = null;
