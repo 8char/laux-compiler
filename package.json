@@ -25,6 +25,7 @@
     "mkdirp": "^0.5.1",
     "mkdirp-then": "^1.2.0",
     "mocha": "^3.2.0",
+    "strip-indent": "^4.0.0",
     "underscore": "^1.8.3",
     "walk": "^2.3.9"
   },
