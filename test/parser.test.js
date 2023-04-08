@@ -8,6 +8,7 @@ import getterSetterTests from './parser/gettersetter.test';
 import mutationStatementTests from './parser/mutationstatements.test';
 import shortcutExpressions from './parser/shortcutexpressions.test';
 import compilerClasses from './compiler/classes.test';
+import safeMemberTests from './parser/safemembernavigator.test';
 
 // TODO: Implement a parse & compiler spec for Types
 // TODO: Implement a compiler spec for Mutations
@@ -50,6 +51,10 @@ describe('Parser', () => {
     it('parses stopif expression', shortcutExpressions.stopifExpression);
     it('parses breakif expression', shortcutExpressions.breakifExpression);
     it('parses continueif expression', shortcutExpressions.continueifExpression);
+  });
+
+  describe('#safe member navigator expression', () => {
+    it('parses stopif expression', safeMemberTests.safememberNavigator);
   });
 });
 
