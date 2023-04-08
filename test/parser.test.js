@@ -5,6 +5,7 @@ import { describe, it } from 'mocha';
 
 import arrowFunctionTests from './parser/arrowfunction.test';
 import getterSetterTests from './parser/gettersetter.test';
+import mutationStatementTests from './parser/mutationstatements.test';
 import compilerClasses from './compiler/classes.test';
 
 describe('Parser', () => {
@@ -23,6 +24,17 @@ describe('Parser', () => {
     it('only has get', getterSetterTests.onlyHasGet);
     it('only has set', getterSetterTests.onlyHasSet);
     it('has set and get', getterSetterTests.hasSetAndGet);
+  });
+
+  describe('#mutation statements', () => {
+    it('parses addition mutation', mutationStatementTests.additionMutation);
+    it('parses subtraction mutation', mutationStatementTests.subtractionMutation);
+    it('parses multiplication mutation', mutationStatementTests.multiplicationMutation);
+    it('parses division mutation', mutationStatementTests.divisionMutation);
+    it('parses modulus mutation', mutationStatementTests.modulusMutation);
+    it('parses increment mutation', mutationStatementTests.incrementMutation);
+    it('parses shortcircuit or mutation', mutationStatementTests.shortcircuitOrMutation);
+    it('parses concatenation mutation', mutationStatementTests.concatenationMutation);
   });
 });
 
