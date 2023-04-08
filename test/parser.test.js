@@ -6,7 +6,16 @@ import { describe, it } from 'mocha';
 import arrowFunctionTests from './parser/arrowfunction.test';
 import getterSetterTests from './parser/gettersetter.test';
 import mutationStatementTests from './parser/mutationstatements.test';
+import shortcutExpressions from './parser/shortcutexpressions.test';
 import compilerClasses from './compiler/classes.test';
+
+// TODO: Implement a parse & compiler spec for Types
+// TODO: Implement a compiler spec for Mutations
+// TODO: Implement a compiler spec for Shortcut Expressions
+// TODO: Implement a parse & compiler spec for Safe Member Navigator
+// TODO: Implement a parse & compiler spec for Spread Operator
+// TODO: Implement a parse & compiler spec for Deconstructor
+// TODO: Implement a parse & compiler spec for For Of Statement
 
 describe('Parser', () => {
   describe('#fat arrow functions', () => {
@@ -35,6 +44,12 @@ describe('Parser', () => {
     it('parses increment mutation', mutationStatementTests.incrementMutation);
     it('parses shortcircuit or mutation', mutationStatementTests.shortcircuitOrMutation);
     it('parses concatenation mutation', mutationStatementTests.concatenationMutation);
+  });
+
+  describe('#shortcut expressions', () => {
+    it('parses stopif expression', shortcutExpressions.stopifExpression);
+    it('parses breakif expression', shortcutExpressions.breakifExpression);
+    it('parses continueif expression', shortcutExpressions.continueifExpression);
   });
 });
 
