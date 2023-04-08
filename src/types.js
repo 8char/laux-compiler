@@ -1,48 +1,51 @@
-import { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS } from "./definitions";
-export { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS }
+import './definitions/init';
+import { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS } from './definitions';
 
-import "./definitions/init";
+export { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS };
 
 const t = exports;
 
 t.INHERIT_KEYS = {
   optional: [],
-  force: ["range", "loc"]
+  force: ['range', 'loc'],
 };
 
-function registerType(type) {
-  let is = t[`is${type}`];
-  if (!is) {
-    t[`is${type}`] = function(node, opts) {
-      return t.is(type, node, opts);
-    }
-  }
+/**
+  Register the given type and create an is${type} function and an assert${type} function.
+  @function
+  @param {string} type - The type to register.
+  @returns {undefined}
+*/
 
-  t[`assert${type}`] = function(node, opts) {
+function registerType(type) {
+  const isFunc = t[`is${type}`];
+  if (!isFunc) t[`is${type}`] = (node, opts) => t.is(type, node, opts);
+
+  t[`assert${type}`] = (node, opts) => {
     opts = opts || {};
-    if (!is(node, opts)) {
+    if (!isFunc(node, opts)) {
       throw new Error(`Expected type ${JSON.stringify(type)} with option ${JSON.stringify(opts)}`);
     }
-  }
+  };
 }
 
 t.FLIPPED_ALIAS_KEYS = {};
-Object.keys(ALIAS_KEYS).forEach(function(type) {
-  t.ALIAS_KEYS[type].forEach(function(alias) {
+Object.keys(ALIAS_KEYS).forEach((type) => {
+  t.ALIAS_KEYS[type].forEach((alias) => {
     const types = t.FLIPPED_ALIAS_KEYS[alias] = t.FLIPPED_ALIAS_KEYS[alias] || [];
     types.push(type);
   });
 });
 
-for (const type in VISITOR_KEYS) {
+Object.keys(VISITOR_KEYS).forEach((type) => {
   registerType(type);
-}
+});
 
-for (const key in ALIAS_KEYS) {
-  for (const type of ALIAS_KEYS[key]) {
+Object.keys(ALIAS_KEYS).forEach((key) => {
+  ALIAS_KEYS[key].forEach((type) => {
     registerType(type);
-  }
-}
+  });
+});
 
 export function is(type, node, opts) {
   if (!node) return false;
@@ -50,7 +53,7 @@ export function is(type, node, opts) {
   const matches = isType(node.type, type);
   if (!matches) return false;
 
-  if (typeof opts === "undefined") {
+  if (typeof opts === 'undefined') {
     return true;
   }
 
@@ -91,33 +94,28 @@ export function isBlockScoped(node) {
 }
 
 export function shallowEqual(actual, expected) {
-  const keys = Object.keys(expected);
-
-  for (const key of keys) {
-    if (actual[key] !== expected[key]) {
-      return false;
-    }
-  }
-
-  return true;
+  return Object.keys(expected)
+    .every((key) => actual[key] === expected[key]);
 }
 
 export function inherits(child, parent) {
   if (!child || !parent) return child;
 
-  // force inherit "private" properties
-  for (const key in parent) {
-    if (key[0] === "_") child[key] = parent[key];
-  }
+  const childCopy = child;
+
+  // force inherit 'private' properties
+  Object.keys(parent).forEach((key) => {
+    if (key[0] === '_') childCopy[key] = parent[key];
+  });
 
   // force inherit select properties
-  for (const key of t.INHERIT_KEYS.force) {
-    child[key] = parent[key];
-  }
+  t.INHERIT_KEYS.force.forEach((key) => {
+    childCopy[key] = parent[key];
+  });
 
-  //t.inheritsComments(child, parent);
+  // t.inheritsComments(child, parent);
 
-  return child;
+  return childCopy;
 }
 
 export function getBindingIdentifiers(node, duplicates, outerOnly) {
@@ -167,14 +165,14 @@ export function getBindingIdentifiers(node, duplicates, outerOnly) {
 }
 
 t.getBindingIdentifiers.keys = {
-  UnaryExpression: ["argument"],
-  AssignmentStatement: ["variables"],
+  UnaryExpression: ['argument'],
+  AssignmentStatement: ['variables'],
 
-  //FunctionDeclaration: ["id", "params"],
-  //FunctionDeclaration: ["id", "params"],
+  // FunctionDeclaration: ['id', 'params'],
+  // FunctionDeclaration: ['id', 'params'],
 
-  ClassStatement: ["identifier"],
-  //ClassExpression: ["id"],
+  ClassStatement: ['identifier'],
+  // ClassExpression: ['id'],
 };
 
 export function getOuterBindingIdentifiers(node, duplicates) {
