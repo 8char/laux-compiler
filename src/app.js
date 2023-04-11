@@ -1,3 +1,4 @@
+require('any-promise/register/bluebird');
 import chalk from 'chalk';
 import walk from 'walk';
 import path from 'path';
@@ -21,7 +22,6 @@ import Workspace from './transpiler/workspace';
 import FileHandler from './transpiler/filehandler';
 
 const mkdirp = require('mkdirp-then');
-require('any-promise/register/bluebird');
 
 /**
   The default options object, with debug, ast, minify, obfuscate, and indent keys.

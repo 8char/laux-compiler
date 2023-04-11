@@ -14,10 +14,10 @@ import forofTests from './parser/forof.test';
 // TODO: Implement a parse & compiler spec for Types
 // TODO: Implement a compiler spec for Mutations
 // TODO: Implement a compiler spec for Shortcut Expressions
-// TODO: Implement a parse spec for Safe Member Navigator
+// TODO: Implement a compiler for Safe Member Navigator
 // TODO: Implement a parse & compiler spec for Spread Operator
 // TODO: Implement a parse & compiler spec for Deconstructor
-// TODO: Implement a parse & compiler spec for For Of Statement
+// TODO: Implement a compiler spec for For Of Statement
 
 describe('Parser', () => {
   describe('#fat arrow functions', () => {
