@@ -2,7 +2,7 @@
   "name": "laux-compiler",
   "version": "1.0.3",
   "description": "LAUX superset of Lua which compiles LAUX code to Lua",
-  "main": "src/app.js",
+  "main": "index.js",
   "private": false,
   "dependencies": {
     "@semantic-release/commit-analyzer": "^9.0.2",
