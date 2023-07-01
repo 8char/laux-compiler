@@ -1,21 +1,16 @@
-import _ from 'underscore';
-import clone from 'lodash/clone';
-import * as virtualTypes from './virtual-types';
-import * as t from './types';
-import * as cache from './cache';
-import NodePath from './path';
+import _ from "underscore";
+import clone from "lodash/clone";
+import * as virtualTypes from "./virtual-types";
+import * as t from "./types";
+import * as cache from "./cache";
+import NodePath from "./path";
 
 export class TraversalContext {
   visitors;
-
   state;
-
   scope;
-
   parentPath;
-
   queue = null;
-
   priorityQueue = null;
 
   constructor(visitors, state, scope, parentPath) {
@@ -31,7 +26,7 @@ export class TraversalContext {
       parent: node,
       container,
       key,
-      listKey,
+      listKey
     });
   }
 
@@ -39,14 +34,15 @@ export class TraversalContext {
     if (this.queue) {
       if (notPriority) {
         this.queue.push(path);
-      } else {
+      }
+      else {
         this.priorityQueue.push(path);
       }
     }
   }
 
   shouldVisit(node) {
-    const { visitors } = this;
+    let visitors = this.visitors;
     if (visitors.enter || visitors.exit) return true;
 
     if (visitors[node.type]) return true;
@@ -54,21 +50,19 @@ export class TraversalContext {
     const keys = t.VISITOR_KEYS[node.type];
     if (!keys || !keys.length) return false;
 
-    const hasNode = keys.some((key) => node[key]);
-
-    if (hasNode) {
-      return true;
+    for (const key of keys) {
+      if (node[key]) return true;
     }
 
     return false;
   }
 
   visitMultiple(container, parent, listKey) {
-    if (container.length === 0) return false;
+    if (container.length == 0) return false;
 
     const queue = [];
 
-    for (let key = 0; key < container.length; key += 1) {
+    for (let key = 0; key < container.length; key++) {
       const node = container[key];
 
       if (node && this.shouldVisit(node)) {
@@ -82,11 +76,12 @@ export class TraversalContext {
   visitSingle(node, key) {
     if (this.shouldVisit(node)) {
       return this.visitQueue([
-        this.create(node, node, key),
+        this.create(node, node, key)
       ]);
     }
-
-    return false;
+    else {
+      return false;
+    }
   }
 
   visitQueue(queue) {
@@ -96,33 +91,35 @@ export class TraversalContext {
     const visited = [];
     let abort = false;
 
-    queue.forEach((path) => {
+    for (const path of queue) {
       path.resync();
 
       if (path.contexts.length === 0 || path.contexts[path.contexts.length - 1] !== this) {
         path.pushContext(this);
       }
 
-      if (path.key === null) return;
+      if (path.key === null) continue;
 
-      if (visited.includes(path.node)) return;
+      if (visited.indexOf(path.node) >= 0) continue;
       visited.push(path.node);
 
       if (path.visit()) {
         abort = true;
-        return;
+        break;
       }
 
       if (this.priorityQueue.length) {
         abort = this.visitQueue(this.priorityQueue);
         this.priorityQueue = [];
         this.queue = queue;
-        // if (abort) return;
+        if (abort) break;
       }
-    });
+    }
 
     // clear queue
-    queue.forEach((path) => path.popContext());
+    for (const path of queue) {
+      path.popContext();
+    }
 
     this.queue = null;
 
@@ -136,8 +133,9 @@ export class TraversalContext {
     if (Array.isArray(nodes)) {
       return this.visitMultiple(nodes, node, key);
     }
-
-    return this.visitSingle(node, key);
+    else {
+      return this.visitSingle(node, key);
+    }
   }
 }
 
@@ -147,19 +145,21 @@ export default function traverse(node, visitors, state, scope, parentPath) {
   traverse.node(node, visitors, state, scope, parentPath);
 }
 
-traverse.node = (node, visitors, state, scope, parentPath) => {
+traverse.node = function(node, visitors, state, scope, parentPath) {
   const keys = t.VISITOR_KEYS[node.type];
   if (!keys) return;
 
-  const context = new TraversalContext(visitors, state, scope, parentPath);
-  keys.some((key) => context.visit(node, key));
+  var context = new TraversalContext(visitors, state, scope, parentPath);
+  for (const key of keys) {
+    if (context.visit(node, key)) return;
+  }
 };
 
-traverse.clearNode = (node) => {
-  cache.path.delete(node);
+traverse.clearNode = function(node, visitors) {
+  cache.path.delete(node)
 };
 
-traverse.clearCache = () => {
+traverse.clearCache = function() {
   cache.clear();
 };
 
@@ -167,11 +167,11 @@ traverse.clearCache.clearPath = cache.clearPath;
 traverse.clearCache.clearScope = cache.clearScope;
 
 function shouldIgnoreKey(key) {
-  if (key[0] === '_') return true;
+  if (key[0] === "_") return true;
 
-  if (key === 'enter' || key === 'exit' || key === 'shouldSkip') return true;
+  if (key === "enter" || key === "exit" || key === "shouldSkip") return true;
 
-  if (key === 'noScope') return true;
+  if (key === "noScope") return true;
 
   return false;
 }
@@ -251,24 +251,24 @@ traverse.explodeVisitors = function(visitors) {
   }
 };
 
-traverse.ensureEntranceObjects = (visitor) => {
+traverse.ensureEntranceObjects = function(visitor) {
   for (const key in visitor) {
     if (shouldIgnoreKey(key)) continue;
 
     const fns = visitor[key];
 
-    if (typeof fns == 'function') {
+    if (typeof fns == "function") {
       visitor[key] = { enter: fns };
     }
   }
 };
 
-traverse.ensureCallbackArrays = (visitor) => {
+traverse.ensureCallbackArrays = function(visitor) {
   if (visitor.enter && !Array.isArray(visitor.enter)) visitor.enter = [ visitor.enter ];
   if (visitor.exit && !Array.isArray(visitor.exit)) visitor.exit = [ visitor.exit ];
 };
 
-traverse.wrapCheck = (wrapper, fn) => {
+traverse.wrapCheck = function(wrapper, fn) {
   const newFn = function (path) {
     if (wrapper.checkPath(path)) {
       return fn.apply(this, arguments);
@@ -278,7 +278,7 @@ traverse.wrapCheck = (wrapper, fn) => {
   return newFn;
 }
 
-traverse.mergePair = (dest, src) => {
+traverse.mergePair = function(dest, src) {
   for (const key in src) {
     dest[key] = [].concat(dest[key] || [], src[key]);
   }

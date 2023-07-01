@@ -1,8 +1,8 @@
-import * as t from './types';
+import * as t from "./types";
 
 export const ReferencedIdentifier = {
-  types: ['Identifier'],
-  checkPath({ node, parent }) {
+  types: [ "Identifier" ],
+  checkPath({ node, parent }, opts) {
     // check if node is referenced
     return t.isReferenced(node, parent);
   },
