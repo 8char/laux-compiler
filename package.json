@@ -51,7 +51,8 @@
   },
   "files": [
     "dist/",
-    "bin/"
+    "bin/",
+    "index.js"
   ],
   "author": "Atlas/8char",
   "license": "MIT",
