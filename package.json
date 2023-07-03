@@ -1,7 +1,6 @@
 {
   "name": "laux-compiler",
   "version": "1.1.5",
-  "type": "module",
   "description": "LAUX superset of Lua which compiles LAUX code to Lua",
   "main": "index.js",
   "private": false,
