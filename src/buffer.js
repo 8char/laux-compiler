@@ -2,13 +2,16 @@ const SPACES_RE = /^[ \t]+$/;
 
 export default class Buffer {
   _buffer = [];
+
   _queue = [];
-  _last = "";
+
+  _last = '';
 
   _position = {
     line: 1,
     column: 0,
   };
+
   _sourcePosition = {
     identifierName: null,
     line: null,
@@ -24,35 +27,35 @@ export default class Buffer {
     this._flush();
 
     const result = {
-      code: this._buffer.join("")
+      code: this._buffer.join(''),
     };
 
     return result;
   }
 
   queue(str) {
-    if (str == "\n")
-      while (this._queue.length > 0 && SPACES_RE.test(this._queue[0][0]))
-        this._queue.shift();
+    if (str == '\n') while (this._queue.length > 0 && SPACES_RE.test(this._queue[0][0])) this._queue.shift();
 
-    const { line, column, fileName, identifierName } = this._sourcePosition;
+    const {
+      line, column, fileName, identifierName,
+    } = this._sourcePosition;
     this._queue.unshift([str, line, column, identifierName, fileName]);
   }
 
   append(str) {
     this._flush();
-    const { line, column, fileName, identifierName } = this._sourcePosition;
+    const {
+      line, column, fileName, identifierName,
+    } = this._sourcePosition;
     this._append(str, line, column, identifierName, fileName);
   }
 
   removeTrailingNewline() {
-    if (this._queue.length > 0 && this._queue[0][0] === "\n")
-      this._queue.shift();
+    if (this._queue.length > 0 && this._queue[0][0] === '\n') this._queue.shift();
   }
 
   removeLastSemicolon() {
-    if (this._queue.length > 0 && this._queue[0][0] === ";")
-      this._queue.shift();
+    if (this._queue.length > 0 && this._queue[0][0] === ';') this._queue.shift();
   }
 
   hasContent() {
@@ -65,15 +68,14 @@ export default class Buffer {
       if (this._queue.length > 0) {
         const str = this._queue[0][0];
         last = str[str.length - 1];
-      }
-      else {
+      } else {
         last = this._last;
       }
 
       return last === suffix;
     }
 
-    const end = this._last + this._queue.reduce((acc, item) => item[0] + acc, "");
+    const end = this._last + this._queue.reduce((acc, item) => item[0] + acc, '');
     if (suffix.length <= end.length) {
       return end.slice(-suffix.length) === suffix;
     }
@@ -82,27 +84,26 @@ export default class Buffer {
   }
 
   getCurrentLine() {
-    const extra = this._queue.reduce((acc, item) => item[0] + acc, "");
+    const extra = this._queue.reduce((acc, item) => item[0] + acc, '');
 
     let count = 0;
     for (let i = 0; i < extra.length; i++) {
-      if (extra[i] === "\n") count++;
+      if (extra[i] === '\n') count++;
     }
 
     return this._position.line + count;
   }
 
   getCurrentColumn() {
-    const extra = this._queue.reduce((acc, item) => item[0] + acc, "");
-    const lastIndex = extra.lastIndexOf("\n");
+    const extra = this._queue.reduce((acc, item) => item[0] + acc, '');
+    const lastIndex = extra.lastIndexOf('\n');
 
     return lastIndex === -1 ? this._position.column + extra.length : (extra.length - 1 - lastIndex);
   }
 
   _flush() {
     let item;
-    while (item = this._queue.pop())
-      this._append(...item);
+    while (item = this._queue.pop()) this._append(...item);
   }
 
   _append(str, line, column, identifierName, fileName) {
@@ -110,11 +111,10 @@ export default class Buffer {
     this._last = str[str.length - 1];
 
     for (let i = 0; i < str.length; i++) {
-      if (str[i] == "\n") {
+      if (str[i] == '\n') {
         this._position.line++;
         this._position.column = 0;
-      }
-      else {
+      } else {
         this._position.column++;
       }
     }

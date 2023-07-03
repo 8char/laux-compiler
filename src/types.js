@@ -1,34 +1,35 @@
-import { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS } from "./definitions";
-export { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS }
+import { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS } from './definitions';
 
-import "./definitions/init";
+import './definitions/init';
+
+export { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS };
 
 const t = exports;
 
 t.INHERIT_KEYS = {
   optional: [],
-  force: ["range", "loc"]
+  force: ['range', 'loc'],
 };
 
 function registerType(type) {
-  let is = t[`is${type}`];
+  const is = t[`is${type}`];
   if (!is) {
-    t[`is${type}`] = function(node, opts) {
+    t[`is${type}`] = function (node, opts) {
       return t.is(type, node, opts);
-    }
+    };
   }
 
-  t[`assert${type}`] = function(node, opts) {
+  t[`assert${type}`] = function (node, opts) {
     opts = opts || {};
     if (!is(node, opts)) {
       throw new Error(`Expected type ${JSON.stringify(type)} with option ${JSON.stringify(opts)}`);
     }
-  }
+  };
 }
 
 t.FLIPPED_ALIAS_KEYS = {};
-Object.keys(ALIAS_KEYS).forEach(function(type) {
-  t.ALIAS_KEYS[type].forEach(function(alias) {
+Object.keys(ALIAS_KEYS).forEach((type) => {
+  t.ALIAS_KEYS[type].forEach((alias) => {
     const types = t.FLIPPED_ALIAS_KEYS[alias] = t.FLIPPED_ALIAS_KEYS[alias] || [];
     types.push(type);
   });
@@ -50,7 +51,7 @@ export function is(type, node, opts) {
   const matches = isType(node.type, type);
   if (!matches) return false;
 
-  if (typeof opts === "undefined") {
+  if (typeof opts === 'undefined') {
     return true;
   }
 
@@ -107,7 +108,7 @@ export function inherits(child, parent) {
 
   // force inherit "private" properties
   for (const key in parent) {
-    if (key[0] === "_") child[key] = parent[key];
+    if (key[0] === '_') child[key] = parent[key];
   }
 
   // force inherit select properties
@@ -115,7 +116,7 @@ export function inherits(child, parent) {
     child[key] = parent[key];
   }
 
-  //t.inheritsComments(child, parent);
+  // t.inheritsComments(child, parent);
 
   return child;
 }
@@ -134,8 +135,7 @@ export function getBindingIdentifiers(node, duplicates, outerOnly) {
       if (duplicates) {
         const _ids = ids[id.name] = ids[id.name] || [];
         _ids.push(id);
-      }
-      else {
+      } else {
         ids[id.name] = id;
       }
       continue;
@@ -167,14 +167,14 @@ export function getBindingIdentifiers(node, duplicates, outerOnly) {
 }
 
 t.getBindingIdentifiers.keys = {
-  UnaryExpression: ["argument"],
-  AssignmentStatement: ["variables"],
+  UnaryExpression: ['argument'],
+  AssignmentStatement: ['variables'],
 
-  //FunctionDeclaration: ["id", "params"],
-  //FunctionDeclaration: ["id", "params"],
+  // FunctionDeclaration: ["id", "params"],
+  // FunctionDeclaration: ["id", "params"],
 
-  ClassStatement: ["identifier"],
-  //ClassExpression: ["id"],
+  ClassStatement: ['identifier'],
+  // ClassExpression: ["id"],
 };
 
 export function getOuterBindingIdentifiers(node, duplicates) {

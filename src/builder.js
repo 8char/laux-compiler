@@ -1,4 +1,4 @@
-import { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS } from "./types";
+import { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS } from './types';
 
 const b = exports;
 
@@ -10,8 +10,8 @@ function registerBuilder(type) {
   function builder() {
     if (arguments.length > keys.length) {
       throw new Error(
-        `t.${type}: Too many arguments passed. Received ${arguments.length} but can receive ` +
-        `no more than ${keys.length}`
+        `t.${type}: Too many arguments passed. Received ${arguments.length} but can receive `
+        + `no more than ${keys.length}`,
       );
     }
 
@@ -21,7 +21,7 @@ function registerBuilder(type) {
     let i = 0;
 
     for (const key of keys) {
-      let arg = arguments[i++];
+      const arg = arguments[i++];
 
       node[key] = arg;
     }
@@ -35,24 +35,25 @@ function registerBuilder(type) {
 
 export function literal(type, value, raw) {
   switch (type) {
-    case "StringLiteral":
+    case 'StringLiteral':
       return b.stringLiteral(value, raw);
 
-    case "NumericLiteral":
+    case 'NumericLiteral':
       return b.numericLiteral(value, raw);
 
-    case "BooleanLiteral":
+    case 'BooleanLiteral':
       return b.booleanLiteral(value, raw);
 
-    case "NilLiteral":
+    case 'NilLiteral':
       return b.nilLiteral(value, raw);
 
-    case "VarargLiteral":
+    case 'VarargLiteral':
       return b.varargLiteral(value, raw);
   }
 
   throw new Error(
-    `Tried to create literal with invalid type ${type}`);
+    `Tried to create literal with invalid type ${type}`,
+  );
 }
 
 for (const type in BUILDER_KEYS) {

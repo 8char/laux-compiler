@@ -1,37 +1,33 @@
-import chai from "chai";
-import chaiSubset from "chai-subset";
-import compiler from "../../src/compiler";
-import parser from "../../src/parser";
-import CodeGenerator from "../../src/codegenerator";
+import chai from 'chai';
+import chaiSubset from 'chai-subset';
+import compiler from '../../src/compiler';
+import parser from '../../src/parser';
+import CodeGenerator from '../../src/codegenerator';
 
 chai.use(chaiSubset);
 
-let {expect} = chai;
+const { expect } = chai;
 
 function parseCode(code) {
-  const ast = parser.parse(code)
-  const compiledAST = compiler.compile(
-    JSON.parse(JSON.stringify(ast)), {
-      debug: false
-    }
-  )
+  const ast = parser.parse(code);
+  const compiledAST = compiler.compile(JSON.parse(JSON.stringify(ast)), {
+    debug: false,
+  });
   const result = new CodeGenerator(code, compiledAST)
     .generate().code;
 
   return result;
 }
 
-
 export default {
-  class: function() {
+  class() {
     expect(
       parseCode(`
         class Test
           __type() 
             return "Test" 
           end
-        end`
-      )
+        end`),
     ).to.equal(`local Test
 do
   local _class_0
@@ -55,9 +51,9 @@ do
   })
   Test = _class_0
 end
-`)
+`);
   },
-  setter: function() {
+  setter() {
     expect(
       parseCode(`
         class Test
@@ -67,7 +63,7 @@ end
             return "Test" 
           end
         end
-      `)
+      `),
     ).to.equal(`local Test
 do
   local _class_0
@@ -95,9 +91,9 @@ do
   })
   Test = _class_0
 end
-`)
+`);
   },
-  getter: function() {
+  getter() {
     expect(
       parseCode(`
         class Test
@@ -107,7 +103,7 @@ end
             return "Test" 
           end
         end
-      `)
+      `),
     ).to.equal(`local Test
 do
   local _class_0
@@ -134,9 +130,9 @@ do
   })
   Test = _class_0
 end
-`)
+`);
   },
-  getterAndSetter: function() {
+  getterAndSetter() {
     expect(
       parseCode(`
         class Test
@@ -146,7 +142,7 @@ end
             return "Test" 
           end
         end
-      `)
+      `),
     ).to.equal(`local Test
 do
   local _class_0
@@ -177,6 +173,6 @@ do
   })
   Test = _class_0
 end
-`)
-  }
-}
+`);
+  },
+};

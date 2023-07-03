@@ -9,7 +9,7 @@ export default class Whitespace {
   getNewlinesBefore(node) {
     let startToken;
     let endToken;
-    const tokens = this.tokens;
+    const { tokens } = this;
 
     let index = this._findToken((token) => token.range[0] - node.range[0], 0, tokens.length);
     if (index >= 0) {
@@ -24,22 +24,21 @@ export default class Whitespace {
   getNewlinesAfter(node) {
     let startToken;
     let endToken;
-    const tokens = this.tokens;
+    const { tokens } = this;
 
     let index = this._findToken((token) => token.range[1] - node.range[1], 0, tokens.length);
     if (index >= 0) {
       while (index && node.range[1] === tokens[index - 1].range[1]) --index;
       startToken = tokens[index];
       endToken = tokens[index + 1];
-      if (endToken.value === ",") endToken = tokens[index + 2];
+      if (endToken.value === ',') endToken = tokens[index + 2];
     }
 
-    if (endToken && endToken.type === "EOF") {
+    if (endToken && endToken.type === 'EOF') {
       return 1;
     }
-    else {
-      return this._getNewlinesBetween(startToken, endToken);
-    }
+
+    return this._getNewlinesBetween(startToken, endToken);
   }
 
   _getNewlinesBetween(startToken, endToken) {
@@ -50,7 +49,7 @@ export default class Whitespace {
     let lines = 0;
 
     for (let line = start; line < end; line++) {
-      if (typeof this.used[line] === "undefined") {
+      if (typeof this.used[line] === 'undefined') {
         this.used[line] = true;
         lines++;
       }
@@ -68,12 +67,11 @@ export default class Whitespace {
     if (match < 0) {
       return this._findToken(test, middle + 1, end);
     }
-    else if (match > 0) {
+    if (match > 0) {
       return this._findToken(test, start, middle);
     }
-    else {
-      return middle;
-    }
+
+    return middle;
 
     return -1;
   }

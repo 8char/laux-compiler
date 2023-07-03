@@ -1,24 +1,25 @@
-var input, options, length;
+let input; let options; let
+  length;
 
 // Options can be set either globally on the parser object through
 // defaultOptions, or during the parse call.
-var defaultOptions = exports.defaultOptions = {
+const defaultOptions = exports.defaultOptions = {
   // Skip over unexpected tokens instead of throwing an exception.
   skipExceptions: false,
   // Store comments as an array in the chunk object.
   comments: true,
 };
 
-var errors = {
+const errors = {
   unexpected: "unexpected %1 '%2' near '%3'",
   expected: "'%1' expected near '%2'",
   expectedToken: "%1 expected near '%2'",
   unfinishedString: "unfinished string near '%1'",
   malformedNumber: "malformed number near '%1'",
-  invalidVar: "invalid left-hand side of assignment near '%1'"
+  invalidVar: "invalid left-hand side of assignment near '%1'",
 };
 
-var slice = Array.prototype.slice
+const { slice } = Array.prototype;
 
 // A sprintf implementation using %index (beginning at 1) to input
 // arguments in the format string.
@@ -29,22 +30,23 @@ var slice = Array.prototype.slice
 //     sprintf("Unexpected %2 in %1.", "token", "function");
 
 function sprintf(format) {
-  var args = slice.call(arguments, 1);
-  format = format.replace(/%(\d)/g, function (match, index) {
-    return "" + args[index - 1] || "";
-  });
+  const args = slice.call(arguments, 1);
+  format = format.replace(/%(\d)/g, (match, index) => `${args[index - 1]}` || '');
   return format;
 }
 
 function extend() {
-  var args = slice.call(arguments),
-      dest = {},
-      src, prop;
+  const args = slice.call(arguments);
+  const dest = {};
+  let src; let
+    prop;
 
-  for (var i = 0, length = args.length; i < length; i++) {
+  for (let i = 0, { length } = args; i < length; i++) {
     src = args[i];
-    for (prop in src) if (src.hasOwnProperty(prop)) {
-      dest[prop] = src[prop];
+    for (prop in src) {
+      if (src.hasOwnProperty(prop)) {
+        dest[prop] = src[prop];
+      }
     }
   }
   return dest;
@@ -66,20 +68,21 @@ function extend() {
 //     raise(token, "expected %1 near %2", "[", token.value);
 
 function raise(token) {
-  var message = sprintf.apply(null, slice.call(arguments, 1)),
-      error, col;
+  const message = sprintf.apply(null, slice.call(arguments, 1));
+  let error; let
+    col;
 
-  if ("undefined" !== typeof token.loc) {
-    var start = token.loc.start;
+  if (typeof token.loc !== 'undefined') {
+    const { start } = token.loc;
 
-    error = new SyntaxError(sprintf("a[%1:%2] %3", start.line, start.column, message));
+    error = new SyntaxError(sprintf('a[%1:%2] %3', start.line, start.column, message));
     error.index = token.range[0];
     error.line = start.line;
     error.column = start.column;
   } else {
     col = index - lineIndex - 1;
 
-    error = new SyntaxError(sprintf("a[%1:%2] %3", line, col, message));
+    error = new SyntaxError(sprintf('a[%1:%2] %3', line, col, message));
     error.index = index;
     error.line = line;
     error.column = col;
@@ -112,24 +115,23 @@ function raiseUnexpectedToken(type, token) {
 // If there's no token in the buffer it means we have reached <eof>.
 
 function unexpected(found, near) {
-  if ("undefined" === typeof near) near = lookahead.value;
-  if ("undefined" !== typeof found.type) {
-    var type;
+  if (typeof near === 'undefined') near = lookahead.value;
+  if (typeof found.type !== 'undefined') {
+    let type;
     switch (found.type) {
-      case StringLiteral:   type = "string";      break;
-      case Keyword:         type = "keyword";     break;
-      case Identifier:      type = "identifier";  break;
-      case NumericLiteral:  type = "number";      break;
-      case Punctuator:      type = "symbol";      break;
-      case BooleanLiteral:  type = "boolean";     break;
+      case StringLiteral: type = 'string'; break;
+      case Keyword: type = 'keyword'; break;
+      case Identifier: type = 'identifier'; break;
+      case NumericLiteral: type = 'number'; break;
+      case Punctuator: type = 'symbol'; break;
+      case BooleanLiteral: type = 'boolean'; break;
       case NilLiteral:
-        return raise(found, errors.unexpected, "symbol", "nil", near);
+        return raise(found, errors.unexpected, 'symbol', 'nil', near);
     }
     return raise(found, errors.unexpected, type, found.value, near);
   }
-  return raise(found, errors.unexpected, "symbol", found, near);
+  return raise(found, errors.unexpected, 'symbol', found, near);
 }
-
 
 // Token
 class Token {
@@ -146,25 +148,24 @@ class SourceLocation {
   constructor(lineStart, columnStart, lineEnd, columnEnd) {
     this.start = {
       line: lineStart,
-      column: columnStart
+      column: columnStart,
     };
     this.end = {
       line: lineEnd,
-      column: columnEnd
-    }
+      column: columnEnd,
+    };
   }
 }
 
-
-var index,
-    token,
-    previousToken,
-    lookahead,
-    tokenStart,
-    line,
-    lineIndex,
-    lineStart,
-    lineStartIndex;
+let index;
+let token;
+let previousToken;
+let lookahead;
+let tokenStart;
+let line;
+let lineIndex;
+let lineStart;
+let lineStartIndex;
 
 // Lexer
 // -----
@@ -196,9 +197,9 @@ function lex() {
   skipWhiteSpace();
 
   // Skip comments beginning with --
-  while ((45 === input.charCodeAt(index) &&
-        45 === input.charCodeAt(index + 1))) {
-          /*
+  while ((input.charCodeAt(index) === 45
+        && input.charCodeAt(index + 1) === 45)) {
+    /*
     let comment = scanComment();
     if (comment)
           return comment
@@ -207,8 +208,8 @@ function lex() {
     skipWhiteSpace();
   }
 
-  var charCode = input.charCodeAt(index),
-      next = input.charCodeAt(index + 1);
+  const charCode = input.charCodeAt(index);
+  const next = input.charCodeAt(index + 1);
 
   // Memorize the range index where the token begins.
   tokenStart = index;
@@ -219,109 +220,109 @@ function lex() {
   if (isIdentifierStart(charCode)) return scanIdentifierOrKeyword();
 
   switch (charCode) {
-  case 39: case 34: // '"
-    return scanStringLiteral();
+    case 39: case 34: // '"
+      return scanStringLiteral();
 
-  case 96: // `
-    return scanStringLiteral(true);
+    case 96: // `
+      return scanStringLiteral(true);
 
-  // 0-9
-  case 48: case 49: case 50: case 51: case 52: case 53:
-  case 54: case 55: case 56: case 57:
-    return scanNumericLiteral();
+      // 0-9
+    case 48: case 49: case 50: case 51: case 52: case 53:
+    case 54: case 55: case 56: case 57:
+      return scanNumericLiteral();
 
-  case 46: // .
+    case 46: // .
     // If the dot is followed by a digit it's a float.
-    if (isDecDigit(next)) return scanNumericLiteral();
-    if (46 === next) {
-      if (46 === input.charCodeAt(index + 2)) return scanVarargLiteral();
-      if (61 === input.charCodeAt(index + 2)) return scanPunctuator("..=");
-      return scanPunctuator("..");
-    }
-    return scanPunctuator(".");
+      if (isDecDigit(next)) return scanNumericLiteral();
+      if (next === 46) {
+        if (input.charCodeAt(index + 2) === 46) return scanVarargLiteral();
+        if (input.charCodeAt(index + 2) === 61) return scanPunctuator('..=');
+        return scanPunctuator('..');
+      }
+      return scanPunctuator('.');
 
-  case 63: // ?
-    if (46 === next) return scanPunctuator("?.");
-    if (91 === next) return scanPunctuator("?[");
-    if (58 === next) return scanPunctuator("?:");
-    if (63 === next) {
-      if (61 === input.charCodeAt(index + 2)) return scanPunctuator("??=");
-      return scanPunctuator("??");
-    }
+    case 63: // ?
+      if (next === 46) return scanPunctuator('?.');
+      if (next === 91) return scanPunctuator('?[');
+      if (next === 58) return scanPunctuator('?:');
+      if (next === 63) {
+        if (input.charCodeAt(index + 2) === 61) return scanPunctuator('??=');
+        return scanPunctuator('??');
+      }
 
-  case 61: // =
-    if (61 === next) return scanPunctuator("==");
-    if (62 === next) return scanPunctuator("=>");
-    return scanPunctuator("=");
+    case 61: // =
+      if (next === 61) return scanPunctuator('==');
+      if (next === 62) return scanPunctuator('=>');
+      return scanPunctuator('=');
 
-  case 62: // >
-    if (61 === next) return scanPunctuator(">=");
-    if (62 === next) return scanPunctuator(">>");
-    return scanPunctuator(">");
+    case 62: // >
+      if (next === 61) return scanPunctuator('>=');
+      if (next === 62) return scanPunctuator('>>');
+      return scanPunctuator('>');
 
-  case 60: // <
-    if (60 === next) return scanPunctuator("<<");
-    if (61 === next) return scanPunctuator("<=");
-    return scanPunctuator("<");
+    case 60: // <
+      if (next === 60) return scanPunctuator('<<');
+      if (next === 61) return scanPunctuator('<=');
+      return scanPunctuator('<');
 
-  case 126: // ~
-    if (61 === next) return scanPunctuator("~=");
-    return scanPunctuator("~");
+    case 126: // ~
+      if (next === 61) return scanPunctuator('~=');
+      return scanPunctuator('~');
 
-  case 58: // :
-    if (58 === next) return scanPunctuator("::");
-    return scanPunctuator(":");
+    case 58: // :
+      if (next === 58) return scanPunctuator('::');
+      return scanPunctuator(':');
 
-  case 91: // [
+    case 91: // [
     // Check for a multiline string, they begin with [= or [[
-    if (91 === next || 61 === next) return scanLongStringLiteral();
-    return scanPunctuator("[");
+      if (next === 91 || next === 61) return scanLongStringLiteral();
+      return scanPunctuator('[');
 
-  case 47: // /
+    case 47: // /
     // Check for integer division op (//)
-    if (47 === next) return scanPunctuator("//");
-    if (61 === next) return scanPunctuator("/=");
-    return scanPunctuator("/");
+      if (next === 47) return scanPunctuator('//');
+      if (next === 61) return scanPunctuator('/=');
+      return scanPunctuator('/');
 
-  case 38: // &&
-    if (38 === next) return scanPunctuator("&&");
-    return scanPunctuator("&");
+    case 38: // &&
+      if (next === 38) return scanPunctuator('&&');
+      return scanPunctuator('&');
 
-  case 124: // ||
-    if (124 === next) {
-      if (61 === input.charCodeAt(index + 2)) return scanPunctuator("||=");
+    case 124: // ||
+      if (next === 124) {
+        if (input.charCodeAt(index + 2) === 61) return scanPunctuator('||=');
 
-      return scanPunctuator("||");
-    }
+        return scanPunctuator('||');
+      }
 
-    return scanPunctuator("|");
+      return scanPunctuator('|');
 
-  case 33: // !
-    if (61 === next) return scanPunctuator("!=");
-    return scanPunctuator("!");
+    case 33: // !
+      if (next === 61) return scanPunctuator('!=');
+      return scanPunctuator('!');
 
-  case 43: // +
-    if (43 === next) return scanPunctuator("++");
-    if (61 === next) return scanPunctuator("+=");
-    return scanPunctuator("+")
+    case 43: // +
+      if (next === 43) return scanPunctuator('++');
+      if (next === 61) return scanPunctuator('+=');
+      return scanPunctuator('+');
 
-  case 45: // -
-    if (61 === next) return scanPunctuator("-=");
-    if (62 === next) return scanPunctuator("->");
-    return scanPunctuator("-")
+    case 45: // -
+      if (next === 61) return scanPunctuator('-=');
+      if (next === 62) return scanPunctuator('->');
+      return scanPunctuator('-');
 
-  case 42: // *
-    if (61 === next) return scanPunctuator("*=");
-    return scanPunctuator("*")
+    case 42: // *
+      if (next === 61) return scanPunctuator('*=');
+      return scanPunctuator('*');
 
-  case 37:
-    if (61 === next) return scanPunctuator("%=");
-    return scanPunctuator("%")
+    case 37:
+      if (next === 61) return scanPunctuator('%=');
+      return scanPunctuator('%');
 
-  // ^ , { } ] ( ) ; & # |
-  case 94: case 44: case 123: case 124: case 125:
-  case 93: case 40: case 41: case 59: case 38: case 35:
-    return scanPunctuator(input.charAt(index));
+      // ^ , { } ] ( ) ; & # |
+    case 94: case 44: case 123: case 124: case 125:
+    case 93: case 40: case 41: case 59: case 38: case 35:
+      return scanPunctuator(input.charAt(index));
   }
 
   if (options.skipExceptions) {
@@ -359,16 +360,16 @@ function next() {
   Skips ahead while tracking the encountered newlines, as whitespace has no semantic meaning in lua.
   @function
   @returns {boolean} - true if an end of line sequence is encountered, false otherwise
-*/  
+*/
 
 function consumeEOL() {
-  var charCode = input.charCodeAt(index),
-      peekCharCode = input.charCodeAt(index + 1);
+  const charCode = input.charCodeAt(index);
+  const peekCharCode = input.charCodeAt(index + 1);
 
   if (isLineTerminator(charCode)) {
     // Count \n\r and \r\n as one newline.
-    if (10 === charCode && 13 === peekCharCode) index++;
-    if (13 === charCode && 10 === peekCharCode) index++;
+    if (charCode === 10 && peekCharCode === 13) index++;
+    if (charCode === 13 && peekCharCode === 10) index++;
 
     line++;
     lineIndex = ++index;
@@ -386,16 +387,16 @@ function consumeEOL() {
 
 function scanEOF() {
   return new Token(
-    "EOF",
-    "<eof>",
+    'EOF',
+    '<eof>',
     tokenStart,
     index,
     new SourceLocation(
       lineStart,
       tokenStart - lineStartIndex,
       line,
-      index - lineIndex
-    )
+      index - lineIndex,
+    ),
   );
 }
 
@@ -409,7 +410,8 @@ function scanEOF() {
 */
 
 function scanIdentifierOrKeyword() {
-  var value, type;
+  let value; let
+    type;
 
   // Slicing the input string is prefered before string concatenation in a
   // loop for performance reasons.
@@ -418,15 +420,15 @@ function scanIdentifierOrKeyword() {
 
   // Decide on the token type and possibly cast the value.
   if (isKeyword(value)) {
-    type = "Keyword";
-  } else if ("true" === value || "false" === value) {
-    type = "BooleanLiteral";
-    value = ("true" === value);
-  } else if ("nil" === value) {
-    type = "NilLiteral";
+    type = 'Keyword';
+  } else if (value === 'true' || value === 'false') {
+    type = 'BooleanLiteral';
+    value = (value === 'true');
+  } else if (value === 'nil') {
+    type = 'NilLiteral';
     value = null;
   } else {
-    type = "Identifier";
+    type = 'Identifier';
   }
 
   return new Token(
@@ -438,8 +440,8 @@ function scanIdentifierOrKeyword() {
       lineStart,
       tokenStart - lineStartIndex,
       line,
-      index - lineIndex
-    )
+      index - lineIndex,
+    ),
   );
 }
 
@@ -452,12 +454,11 @@ function scanIdentifierOrKeyword() {
   @returns {Token} The resulting token.
 */
 
-
 function scanPunctuator(value) {
   index += value.length;
 
   return new Token(
-    "Punctuator",
+    'Punctuator',
     value,
     tokenStart,
     index,
@@ -465,8 +466,8 @@ function scanPunctuator(value) {
       lineStart,
       tokenStart - lineStartIndex,
       line,
-      index - lineIndex
-    )
+      index - lineIndex,
+    ),
   );
 }
 
@@ -480,16 +481,16 @@ function scanPunctuator(value) {
 function scanVarargLiteral() {
   index += 3;
   return new Token(
-    "VarargLiteral",
-    "...",
+    'VarargLiteral',
+    '...',
     tokenStart,
     index,
     new SourceLocation(
       lineStart,
       tokenStart - lineStartIndex,
       line,
-      index - lineIndex
-    )
+      index - lineIndex,
+    ),
   );
 }
 
@@ -502,15 +503,15 @@ function scanVarargLiteral() {
 */
 
 function scanStringLiteral(isTemplate) {
-  var delimiter = input.charCodeAt(index++),
-      stringStart = index,
-      string = "",
-      charCode;
+  const delimiter = input.charCodeAt(index++);
+  let stringStart = index;
+  let string = '';
+  let charCode;
 
   while (index < length) {
     charCode = input.charCodeAt(index++);
     if (delimiter === charCode) break;
-    if (92 === charCode) { // \
+    if (charCode === 92) { // \
       string += input.slice(stringStart, index - 1) + readEscapeSequence();
       stringStart = index;
     }
@@ -523,8 +524,8 @@ function scanStringLiteral(isTemplate) {
   }
   string += input.slice(stringStart, index - 1);
 
-  var token = new Token(
-    "StringLiteral",
+  const token = new Token(
+    'StringLiteral',
     string,
     tokenStart,
     index,
@@ -532,8 +533,8 @@ function scanStringLiteral(isTemplate) {
       lineStart,
       tokenStart - lineStartIndex,
       line,
-      index - lineIndex
-    )
+      index - lineIndex,
+    ),
   );
 
   token.isTemplate = isTemplate;
@@ -550,12 +551,12 @@ function scanStringLiteral(isTemplate) {
 */
 
 function scanLongStringLiteral() {
-  var string = readLongString();
+  const string = readLongString();
   // Fail if it's not a multiline literal.
-  if (false === string && !options.skipExceptions) raise(token, errors.expected, "[", token.value);
+  if (string === false && !options.skipExceptions) raise(token, errors.expected, '[', token.value);
 
   return new Token(
-    "StringLiteral",
+    'StringLiteral',
     string,
     tokenStart,
     index,
@@ -563,8 +564,8 @@ function scanLongStringLiteral() {
       lineStart,
       tokenStart - lineStartIndex,
       line,
-      index - lineIndex
-    )
+      index - lineIndex,
+    ),
   );
 }
 
@@ -580,14 +581,14 @@ function scanLongStringLiteral() {
 */
 
 function scanNumericLiteral() {
-  var character = input.charAt(index),
-      next = input.charAt(index + 1);
+  const character = input.charAt(index);
+  const next = input.charAt(index + 1);
 
-  var value = ("0" === character && "xX".indexOf(next || null) >= 0) ?
-    readHexLiteral() : readDecLiteral();
+  const value = (character === '0' && 'xX'.indexOf(next || null) >= 0)
+    ? readHexLiteral() : readDecLiteral();
 
   return new Token(
-    "NumericLiteral",
+    'NumericLiteral',
     value,
     tokenStart,
     index,
@@ -595,8 +596,8 @@ function scanNumericLiteral() {
       lineStart,
       tokenStart - lineStartIndex,
       line,
-      index - lineIndex
-    )
+      index - lineIndex,
+    ),
   );
 }
 
@@ -616,23 +617,23 @@ function scanNumericLiteral() {
 */
 
 function readHexLiteral() {
-  var fraction = 0, // defaults to 0 as it gets summed
-      binaryExponent = 1, // defaults to 1 as it gets multiplied
-      binarySign = 1, // positive
-      digit, fractionStart, exponentStart, digitStart;
+  let fraction = 0; // defaults to 0 as it gets summed
+  let binaryExponent = 1; // defaults to 1 as it gets multiplied
+  let binarySign = 1; // positive
+  let digit; let fractionStart; let exponentStart; let
+    digitStart;
 
   digitStart = index += 2; // Skip 0x part
 
   // A minimum of one hex digit is required.
-  if (!isHexDigit(input.charCodeAt(index)) && !options.skipExceptions)
-    raise({}, errors.malformedNumber, input.slice(tokenStart, index));
+  if (!isHexDigit(input.charCodeAt(index)) && !options.skipExceptions) raise({}, errors.malformedNumber, input.slice(tokenStart, index));
 
   while (isHexDigit(input.charCodeAt(index))) index++;
   // Convert the hexadecimal digit to base 10.
   digit = parseInt(input.slice(digitStart, index), 16);
 
   // Fraction part i optional.
-  if ("." === input.charAt(index)) {
+  if (input.charAt(index) === '.') {
     fractionStart = ++index;
 
     while (isHexDigit(input.charCodeAt(index))) index++;
@@ -641,28 +642,26 @@ function readHexLiteral() {
     // Empty fraction parts should default to 0, others should be converted
     // 0.x form so we can use summation at the end.
     fraction = (fractionStart === index) ? 0
-      : parseInt(fraction, 16) / Math.pow(16, index - fractionStart);
+      : parseInt(fraction, 16) / 16 ** (index - fractionStart);
   }
 
   // Binary exponents are optional
-  if ("pP".indexOf(input.charAt(index) || null) >= 0) {
+  if ('pP'.indexOf(input.charAt(index) || null) >= 0) {
     index++;
 
     // Sign part is optional and defaults to 1 (positive).
-    if ("+-".indexOf(input.charAt(index) || null) >= 0)
-      binarySign = ("+" === input.charAt(index++)) ? 1 : -1;
+    if ('+-'.indexOf(input.charAt(index) || null) >= 0) binarySign = (input.charAt(index++) === '+') ? 1 : -1;
 
     exponentStart = index;
 
     // The binary exponent sign requires a decimal digit.
-    if (!isDecDigit(input.charCodeAt(index)) && !options.skipExceptions)
-      raise({}, errors.malformedNumber, input.slice(tokenStart, index));
+    if (!isDecDigit(input.charCodeAt(index)) && !options.skipExceptions) raise({}, errors.malformedNumber, input.slice(tokenStart, index));
 
     while (isDecDigit(input.charCodeAt(index))) index++;
     binaryExponent = input.slice(exponentStart, index);
 
     // Calculate the binary exponent of the number.
-    binaryExponent = Math.pow(2, binaryExponent * binarySign);
+    binaryExponent = 2 ** (binaryExponent * binarySign);
   }
 
   return (digit + fraction) * binaryExponent;
@@ -680,26 +679,24 @@ function readHexLiteral() {
 function readDecLiteral() {
   while (isDecDigit(input.charCodeAt(index))) index++;
   // Fraction part is optional
-  if ("." === input.charAt(index)) {
+  if (input.charAt(index) === '.') {
     index++;
     // Fraction part defaults to 0
     while (isDecDigit(input.charCodeAt(index))) index++;
   }
   // Exponent part is optional.
-  if ("eE".indexOf(input.charAt(index) || null) >= 0) {
+  if ('eE'.indexOf(input.charAt(index) || null) >= 0) {
     index++;
     // Sign part is optional.
-    if ("+-".indexOf(input.charAt(index) || null) >= 0) index++;
+    if ('+-'.indexOf(input.charAt(index) || null) >= 0) index++;
     // An exponent is required to contain at least one decimal digit.
-    if (!isDecDigit(input.charCodeAt(index)) && !options.skipExceptions)
-      raise({}, errors.malformedNumber, input.slice(tokenStart, index));
+    if (!isDecDigit(input.charCodeAt(index)) && !options.skipExceptions) raise({}, errors.malformedNumber, input.slice(tokenStart, index));
 
     while (isDecDigit(input.charCodeAt(index))) index++;
   }
 
   return parseFloat(input.slice(tokenStart, index));
 }
-
 
 // Translate escape sequences to the actual characters.
 
@@ -709,33 +706,33 @@ function readDecLiteral() {
 */
 
 function readEscapeSequence() {
-  var sequenceStart = index;
+  const sequenceStart = index;
   switch (input.charAt(index)) {
     // Lua allow the following escape sequences.
     // We don't escape the bell sequence.
-    case "n": index++; return "\n";
-    case "r": index++; return "\r";
-    case "t": index++; return "\t";
-    case "v": index++; return "\x0B";
-    case "b": index++; return "\b";
-    case "f": index++; return "\f";
+    case 'n': index++; return '\n';
+    case 'r': index++; return '\r';
+    case 't': index++; return '\t';
+    case 'v': index++; return '\x0B';
+    case 'b': index++; return '\b';
+    case 'f': index++; return '\f';
     // Skips the following span of white-space.
-    case "z": index++; skipWhiteSpace(); return "";
+    case 'z': index++; skipWhiteSpace(); return '';
     // Byte representation should for now be returned as is.
-    case "x":
+    case 'x':
       // \xXX, where XX is a sequence of exactly two hexadecimal digits
-      if (isHexDigit(input.charCodeAt(index + 1)) &&
-          isHexDigit(input.charCodeAt(index + 2))) {
+      if (isHexDigit(input.charCodeAt(index + 1))
+          && isHexDigit(input.charCodeAt(index + 2))) {
         index += 3;
         // Return it as is, without translating the byte.
-        return "\\" + input.slice(sequenceStart, index);
+        return `\\${input.slice(sequenceStart, index)}`;
       }
-      return "\\" + input.charAt(index++);
+      return `\\${input.charAt(index++)}`;
     default:
       // \ddd, where ddd is a sequence of up to three decimal digits.
       if (isDecDigit(input.charCodeAt(index))) {
         while (isDecDigit(input.charCodeAt(++index)));
-        return "\\" + input.slice(sequenceStart, index);
+        return `\\${input.slice(sequenceStart, index)}`;
       }
       // Simply return the \ as is, it's not escaping any sequence.
       return input.charAt(index++);
@@ -753,17 +750,17 @@ function scanComment() {
   lineStart = line;
   index += 2; // --
 
-  var character = input.charAt(index),
-      content = "",
-      isLong = false,
-      commentStart = index,
-      lineStartComment = lineIndex,
-      lineComment = line;
+  const character = input.charAt(index);
+  let content = '';
+  let isLong = false;
+  const commentStart = index;
+  const lineStartComment = lineIndex;
+  const lineComment = line;
 
-  if ("[" === character) {
+  if (character === '[') {
     content = readLongString();
     // This wasn't a multiline comment after all.
-    if (false === content) content = character;
+    if (content === false) content = character;
     else isLong = true;
   }
   // Scan until next line as long as it's not a multiline comment.
@@ -797,17 +794,18 @@ function scanComment() {
 // then appending until an equal depth is found.
 
 function readLongString() {
-  var level = 0,
-      content = "",
-      terminator = false,
-      character, stringStart;
+  let level = 0;
+  let content = '';
+  let terminator = false;
+  let character; let
+    stringStart;
 
   index++; // [
 
   // Calculate the depth of the comment.
-  while ("=" === input.charAt(index + level)) level++;
+  while (input.charAt(index + level) === '=') level++;
   // Exit, this is not a long string afterall.
-  if ("[" !== input.charAt(index + level)) return false;
+  if (input.charAt(index + level) !== '[') return false;
 
   index += level + 1;
 
@@ -824,12 +822,12 @@ function readLongString() {
 
     // Once the delimiter is found, iterate through the depth count and see
     // if it matches.
-    if ("]" === character) {
+    if (character === ']') {
       terminator = true;
-      for (var i = 0; i < level; i++) {
-        if ("=" !== input.charAt(index + i)) terminator = false;
+      for (let i = 0; i < level; i++) {
+        if (input.charAt(index + i) !== '=') terminator = false;
       }
-      if ("]" !== input.charAt(index + level)) terminator = false;
+      if (input.charAt(index + level) !== ']') terminator = false;
     }
 
     // We reached the end of the multiline string. Get out now.
@@ -843,7 +841,7 @@ function readLongString() {
 
 function skipWhiteSpace() {
   while (index < length) {
-    var charCode = input.charCodeAt(index);
+    const charCode = input.charCodeAt(index);
     if (isWhiteSpace(charCode)) {
       index++;
     } else if (!consumeEOL()) {
@@ -858,7 +856,7 @@ const WhiteSpaceCharCode = {
   HORIZONTAL_TAB: 9,
   SPACE: 32,
   LINE_TABULATION: 0xB,
-  FORM_FEED: 0xC
+  FORM_FEED: 0xC,
 };
 
 /**
@@ -869,15 +867,15 @@ const WhiteSpaceCharCode = {
  */
 
 function isWhiteSpace(charCode) {
-  return charCode === WhiteSpaceCharCode.HORIZONTAL_TAB ||
-         charCode === WhiteSpaceCharCode.SPACE ||
-         charCode === WhiteSpaceCharCode.LINE_TABULATION ||
-         charCode === WhiteSpaceCharCode.FORM_FEED;
+  return charCode === WhiteSpaceCharCode.HORIZONTAL_TAB
+         || charCode === WhiteSpaceCharCode.SPACE
+         || charCode === WhiteSpaceCharCode.LINE_TABULATION
+         || charCode === WhiteSpaceCharCode.FORM_FEED;
 }
 
 const LineTerminatorCharCode = {
   LINE_FEED: 10,
-  CARRIAGE_RETURN: 13
+  CARRIAGE_RETURN: 13,
 };
 
 /**
@@ -888,13 +886,13 @@ const LineTerminatorCharCode = {
  */
 
 function isLineTerminator(charCode) {
-  return charCode === LineTerminatorCharCode.LINE_FEED ||
-         charCode === LineTerminatorCharCode.CARRIAGE_RETURN;
+  return charCode === LineTerminatorCharCode.LINE_FEED
+         || charCode === LineTerminatorCharCode.CARRIAGE_RETURN;
 }
 
 const DecDigitCharCode = {
   ZERO: 48,
-  NINE: 57
+  NINE: 57,
 };
 
 /**
@@ -914,7 +912,7 @@ const HexDigitCharCode = {
   LOWERCASE_A: 97,
   LOWERCASE_F: 102,
   UPPERCASE_A: 65,
-  UPPERCASE_F: 70
+  UPPERCASE_F: 70,
 };
 
 /**
@@ -925,9 +923,9 @@ const HexDigitCharCode = {
  */
 
 function isHexDigit(charCode) {
-  return (charCode >= HexDigitCharCode.ZERO && charCode <= HexDigitCharCode.NINE) ||
-         (charCode >= HexDigitCharCode.LOWERCASE_A && charCode <= HexDigitCharCode.LOWERCASE_F) ||
-         (charCode >= HexDigitCharCode.UPPERCASE_A && charCode <= HexDigitCharCode.UPPERCASE_F);
+  return (charCode >= HexDigitCharCode.ZERO && charCode <= HexDigitCharCode.NINE)
+         || (charCode >= HexDigitCharCode.LOWERCASE_A && charCode <= HexDigitCharCode.LOWERCASE_F)
+         || (charCode >= HexDigitCharCode.UPPERCASE_A && charCode <= HexDigitCharCode.UPPERCASE_F);
 }
 
 // From [Lua 5.2](http://www.lua.org/manual/5.2/manual.html#8.1) onwards
@@ -938,7 +936,7 @@ const IdentifierStartCharCode = {
   LOWERCASE_Z: 122,
   UPPERCASE_A: 65,
   UPPERCASE_Z: 90,
-  UNDERSCORE: 95
+  UNDERSCORE: 95,
 };
 
 /**
@@ -949,9 +947,9 @@ const IdentifierStartCharCode = {
  */
 
 function isIdentifierStart(charCode) {
-  return (charCode >= IdentifierStartCharCode.UPPERCASE_A && charCode <= IdentifierStartCharCode.UPPERCASE_Z) ||
-         (charCode >= IdentifierStartCharCode.LOWERCASE_A && charCode <= IdentifierStartCharCode.LOWERCASE_Z) ||
-         charCode === IdentifierStartCharCode.UNDERSCORE;
+  return (charCode >= IdentifierStartCharCode.UPPERCASE_A && charCode <= IdentifierStartCharCode.UPPERCASE_Z)
+         || (charCode >= IdentifierStartCharCode.LOWERCASE_A && charCode <= IdentifierStartCharCode.LOWERCASE_Z)
+         || charCode === IdentifierStartCharCode.UNDERSCORE;
 }
 
 const IdentifierPartCharCode = {
@@ -961,7 +959,7 @@ const IdentifierPartCharCode = {
   UPPERCASE_Z: 90,
   DIGIT_0: 48,
   DIGIT_9: 57,
-  UNDERSCORE: 95
+  UNDERSCORE: 95,
 };
 
 /**
@@ -972,30 +970,29 @@ const IdentifierPartCharCode = {
  */
 
 function isIdentifierPart(charCode) {
-  return (charCode >= IdentifierPartCharCode.UPPERCASE_A && charCode <= IdentifierPartCharCode.UPPERCASE_Z) ||
-         (charCode >= IdentifierPartCharCode.LOWERCASE_A && charCode <= IdentifierPartCharCode.LOWERCASE_Z) ||
-         (charCode >= IdentifierPartCharCode.DIGIT_0 && charCode <= IdentifierPartCharCode.DIGIT_9) ||
-         charCode === IdentifierPartCharCode.UNDERSCORE;
+  return (charCode >= IdentifierPartCharCode.UPPERCASE_A && charCode <= IdentifierPartCharCode.UPPERCASE_Z)
+         || (charCode >= IdentifierPartCharCode.LOWERCASE_A && charCode <= IdentifierPartCharCode.LOWERCASE_Z)
+         || (charCode >= IdentifierPartCharCode.DIGIT_0 && charCode <= IdentifierPartCharCode.DIGIT_9)
+         || charCode === IdentifierPartCharCode.UNDERSCORE;
 }
-
 
 // [3.1 Lexical Conventions](http://www.lua.org/manual/5.2/manual.html#3.1)
 //
 // `true`, `false` and `nil` will not be considered keywords, but literals.
 
 const keywords = [
-  "do", "if", "in", "of", "or", "&&", "||", "??",
-  "and", "end", "for", "not",
-  "else", "goto", "then", "self",
-  "break", "local", "until", "while", "class", "super", "await", "async", "throw",
-  "elseif", "repeat", "return", "static", "public", "stopif", "import",
-  "extends", "breakif",
-  "continue", "function",
-  "continueif"
+  'do', 'if', 'in', 'of', 'or', '&&', '||', '??',
+  'and', 'end', 'for', 'not',
+  'else', 'goto', 'then', 'self',
+  'break', 'local', 'until', 'while', 'class', 'super', 'await', 'async', 'throw',
+  'elseif', 'repeat', 'return', 'static', 'public', 'stopif', 'import',
+  'extends', 'breakif',
+  'continue', 'function',
+  'continueif',
 ];
 
 const keywordsByLength = keywords.reduce((acc, keyword) => {
-  const length = keyword.length;
+  const { length } = keyword;
   if (!acc[length]) {
     acc[length] = [];
   }
@@ -1010,8 +1007,7 @@ const keywordsByLength = keywords.reduce((acc, keyword) => {
  * @returns {boolean} Whether the identifier is a keyword.
  */
 
-const isKeyword = (id) => keywordsByLength[id.length] ? keywordsByLength[id.length].includes(id) : false;
-
+const isKeyword = (id) => (keywordsByLength[id.length] ? keywordsByLength[id.length].includes(id) : false);
 
 /**
  * Checks if a given token is a unary operator.
@@ -1021,8 +1017,8 @@ const isKeyword = (id) => keywordsByLength[id.length] ? keywordsByLength[id.leng
  */
 
 function isUnary(token) {
-  if (Punctuator === token.type) return "#-~!".indexOf(token.value) >= 0;
-  if (Keyword === token.type) return "not" === token.value;
+  if (Punctuator === token.type) return '#-~!'.indexOf(token.value) >= 0;
+  if (Keyword === token.type) return token.value === 'not';
   return false;
 }
 
@@ -1035,7 +1031,7 @@ function isUnary(token) {
  */
 
 function tokenize(_input, _options) {
-  if ("undefined" === typeof _options && "object" === typeof _input) {
+  if (typeof _options === 'undefined' && typeof _input === 'object') {
     _options = _input;
     _input = undefined;
   }
@@ -1043,7 +1039,7 @@ function tokenize(_input, _options) {
 
   options = extend(defaultOptions, _options);
 
-  input = _input || "";
+  input = _input || '';
 
   index = 0;
   line = 1;
@@ -1055,9 +1051,9 @@ function tokenize(_input, _options) {
   lookahead = lex();
   next();
 
-  var tokens = [token];
+  const tokens = [token];
 
-  while (token.type !== "EOF") {
+  while (token.type !== 'EOF') {
     next();
     tokens.push(token);
   }
@@ -1065,9 +1061,9 @@ function tokenize(_input, _options) {
   return tokens;
 }
 
-var tokenizer = {
-  tokenize: tokenize,
-  errors: errors
+const tokenizer = {
+  tokenize,
+  errors,
 };
 
 module.exports = tokenizer;

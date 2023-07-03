@@ -87,7 +87,7 @@ export default {
                 type: 'StringLiteral',
                 value: 'Hey',
                 raw: '\'Hey\'',
-              }
+              },
             ],
           },
         },

@@ -1,21 +1,22 @@
-import chalk from "chalk";
-import tokenizer from "./tokenizer";
+import chalk from 'chalk';
+import tokenizer from './tokenizer';
 
 function isFunction(obj) {
-  return toString.call(obj) === "[object Function]";
+  return toString.call(obj) === '[object Function]';
 }
 
-var code, splits, lastSplitEnd;
+let code; let splits; let
+  lastSplitEnd;
 
 function addSplit(start, end, color) {
-  var result, nextIndex, skip = 0;
+  let result; let nextIndex; const
+    skip = 0;
 
   if (start >= end) return;
 
   if (color) {
     splits.push(color(code.slice(start, end)));
-  }
-  else {
+  } else {
     splits.push(code.slice(start, end));
   }
 
@@ -24,7 +25,7 @@ function addSplit(start, end, color) {
   return skip;
 }
 
-var highlighter = {
+const highlighter = {
   colors: {
     Keyword: {
       local: chalk.cyan,
@@ -51,77 +52,77 @@ var highlighter = {
       super: chalk.yellow,
     },
     Punctuator: {
-      "->": chalk.cyan,
-      "=>": chalk.cyan,
+      '->': chalk.cyan,
+      '=>': chalk.cyan,
 
-      "!": chalk.cyan,
-      "||": chalk.cyan,
-      "&&": chalk.cyan,
-      "!=": chalk.cyan,
-      "~=": chalk.cyan,
-      "==": chalk.cyan,
+      '!': chalk.cyan,
+      '||': chalk.cyan,
+      '&&': chalk.cyan,
+      '!=': chalk.cyan,
+      '~=': chalk.cyan,
+      '==': chalk.cyan,
 
-      "++": chalk.cyan,
-      "-=": chalk.cyan,
-      "+=": chalk.cyan,
-      "*=": chalk.cyan,
-      "/=": chalk.cyan,
-      "%=": chalk.cyan,
-      "..=": chalk.cyan,
+      '++': chalk.cyan,
+      '-=': chalk.cyan,
+      '+=': chalk.cyan,
+      '*=': chalk.cyan,
+      '/=': chalk.cyan,
+      '%=': chalk.cyan,
+      '..=': chalk.cyan,
     },
     Identifier: {
       constructor: chalk.yellow,
     },
     BooleanLiteral: {
-      _default: chalk.magenta
+      _default: chalk.magenta,
     },
     NumericLiteral: {
-      _default: chalk.green
+      _default: chalk.green,
     },
     StringLiteral: {
-      _default: chalk.yellow
-    }
+      _default: chalk.yellow,
+    },
   },
 
-  highlight: function(_code, options) {
+  highlight(_code, options) {
     splits = [];
     lastSplitEnd = 0;
     code = _code;
 
-    var colors = this.colors;
+    let { colors } = this;
     if (options) {
       if (options.colors) {
         colors = options.colors;
       }
     }
 
-    var tokens = tokenizer.tokenize(code, {
-      skipExceptions: true
+    const tokens = tokenizer.tokenize(code, {
+      skipExceptions: true,
     });
 
-    for (var i = 0; i < tokens.length; i++) {
-      var token = tokens[i];
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
 
-      var start, end;
+      var start; var
+        end;
       start = token.range[0];
       end = token.range[1];
 
-      var colorForType = colors[token.type];
+      const colorForType = colors[token.type];
 
-      var color = colorForType &&
-        colorForType.hasOwnProperty(token.value) &&
-        colorForType[token.value] &&
-        isFunction(colorForType[token.value]) ?
-          colorForType[token.value] :
-          colorForType && colorForType._default;
+      const color = colorForType
+        && colorForType.hasOwnProperty(token.value)
+        && colorForType[token.value]
+        && isFunction(colorForType[token.value])
+        ? colorForType[token.value]
+        : colorForType && colorForType._default;
 
       addSplit(lastSplitEnd, start);
-      var skip = addSplit(start, end, color)
+      const skip = addSplit(start, end, color);
     }
 
-
-    return splits.join("");
-  }
-}
+    return splits.join('');
+  },
+};
 
 export default highlighter;

@@ -231,7 +231,7 @@ export default class Scope {
           constant: binding.constant,
           references: binding.references,
           violations: binding.constantViolations.length,
-          kind: binding.kind
+          kind: binding.kind,
         });
       }
     } while (scope = scope.parent);
@@ -239,7 +239,7 @@ export default class Scope {
   }
 
   toArray(node, i) {
-    const file = this.hub.file;
+    const { file } = this.hub;
 
     if (t.isIdentifier(node)) {
       const binding = this.getBinding(node.name);
@@ -272,13 +272,11 @@ export default class Scope {
       const variables = path.get('variables');
 
       for (const variable of variables) {
-        this.registerBinding('var', variable)
+        this.registerBinding('var', variable);
       }
-    }
-    else if (path.isClassStatement()) {
+    } else if (path.isClassStatement()) {
       this.registerBinding('var', path);
-    }
-    else {
+    } else {
       this.registerBinding('unknown', path);
     }
   }
@@ -308,7 +306,7 @@ export default class Scope {
 
     for (const name in ids) {
       for (const id of ids[name]) {
-        let local = this.getOwnBinding(name);
+        const local = this.getOwnBinding(name);
         if (local) {
           if (local.identifier === id) continue;
 
@@ -322,7 +320,7 @@ export default class Scope {
           existing: local,
           scope: this,
           path: bindingPath,
-          kind: kind
+          kind,
         });
       }
     }
@@ -405,7 +403,7 @@ export default class Scope {
   }
 
   crawl() {
-    const path = this.path;
+    const { path } = this;
 
     this.references = Object.create(null);
     this.bindings = Object.create(null);
@@ -432,7 +430,7 @@ export default class Scope {
     const state = {
       references: [],
       constantViolations: [],
-      assignments: []
+      assignments: [],
     };
 
     this.crawling = true;
@@ -456,8 +454,7 @@ export default class Scope {
       const binding = ref.scope.getBinding(ref.node.name);
       if (binding) {
         binding.reference(ref);
-      }
-      else {
+      } else {
         ref.scope.getChunkParent().addGlobal(ref.node);
       }
     }
@@ -468,15 +465,15 @@ export default class Scope {
   }
 
   push(opts) {
-    let path = this.path;
+    const { path } = this;
 
     // TODO
 
-    const unique = opts.unique;
+    const { unique } = opts;
     const blockHoist = opts._blockHoist == null ? 2 : opts._blockHoist;
 
     const dataKey = `declaration:${king}:${blockHoist}`;
-    let declarPath = !unique && path.getData(dataKey);
+    const declarPath = !unique && path.getData(dataKey);
 
     // TODO: Declare
     // if (!declarPath) {}
@@ -514,7 +511,7 @@ export default class Scope {
     throw new Error("We couldn't find a BlockStatement, For, Switch, Function, Loop or Program...");
   }
 
-  getAllBindings(){
+  getAllBindings() {
     const ids = Object.create(null);
 
     let scope = this;

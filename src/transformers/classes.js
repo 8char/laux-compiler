@@ -1,16 +1,16 @@
-import _ from "underscore";
+import _ from 'underscore';
 
-import ReplaceSupers from "../helpers/replace-supers"
+import ReplaceSupers from '../helpers/replace-supers';
 
-import traverse from "../visitor";
-import * as b from "../builder";
-import * as t from "../types";
+import traverse from '../visitor';
+import * as b from '../builder';
+import * as t from '../types';
 
 const verifyConstructorVisitor = {
   SuperExpression(path) {
     if (
-      this.isDerived && !this.hasBareSuper &&
-      !path.parentPath.isCallExpression({ base: path.node })
+      this.isDerived && !this.hasBareSuper
+      && !path.parentPath.isCallExpression({ base: path.node })
     ) {
       // TODO: Code frame
       throw new Error("'super.*' is not allowed before super()");
@@ -19,15 +19,15 @@ const verifyConstructorVisitor = {
 
   CallExpression: {
     exit(path) {
-      if (path.get("base").isSuperExpression()) {
+      if (path.get('base').isSuperExpression()) {
         this.hasBareSuper = true;
 
         if (!this.isDerived) {
           // TODO: Code frame
-          throw new Error("super() is only allowed in a derived constructor");
+          throw new Error('super() is only allowed in a derived constructor');
         }
       }
-    }
+    },
   },
 
   SelfExpression(path) {
@@ -39,8 +39,8 @@ const verifyConstructorVisitor = {
         throw new Error("'self' is not allowed before super()");
       }
     }
-  }
-}
+  },
+};
 
 export default class ClassTransformer {
   constructor(path, state) {
@@ -68,72 +68,70 @@ export default class ClassTransformer {
   }
 
   run() {
-    const path = this.path;
-    const node = path.node;
+    const { path } = this;
+    const { node } = path;
 
-    var parent = node.parent;
-    var body = this.body;
+    const { parent } = node;
+    const { body } = this;
 
-    const singletonVars = node.identifier.type == "CallExpression" && node.identifier.arguments;
+    const singletonVars = node.identifier.type == 'CallExpression' && node.identifier.arguments;
     // If it's a singleton, we still wanna define our class as normal, hence get the Identifier/MemberExpression
     if (singletonVars) {
       node.identifier = node.identifier.base;
     }
-    var strName = node.identifier.name;
+    let strName = node.identifier.name;
     if (strName == undefined) {
-      strName = ""
+      strName = '';
 
-      function constructName(obj, separator = "", postFix = "") {
-        if (obj.type == "Identifier") {
-          strName += `${separator}${obj.name}${postFix}`
+      function constructName(obj, separator = '', postFix = '') {
+        if (obj.type == 'Identifier') {
+          strName += `${separator}${obj.name}${postFix}`;
+        } else if (obj.type == 'BinaryExpression') {
+          if (strName == '') {
+            constructName(obj.left);
+          }
 
-          return
-        } else if (obj.type == "BinaryExpression") {
-          if (strName == "") {
-            constructName(obj.left)
-          } 
+          constructName(obj.right, '|');
+        } else if (obj.type == 'MemberExpression') {
+          constructName(obj.base, `${strName == '' ? '' : '|'}`);
 
-          constructName(obj.right, "|")
-        } else if (obj.type == "MemberExpression") {
-          constructName(obj.base, `${strName == "" ? "" : "|"}`)
-
-          constructName(obj.identifier, ".", "")
+          constructName(obj.identifier, '.', '');
         }
       }
 
-      constructName(node.identifier)
+      constructName(node.identifier);
     }
-    this.name = strName
+    this.name = strName;
 
     const constructorBody = this.constructorBody = [];
     this.constructor = this.buildConstructor();
 
-    const idClass0 = b.identifier("_class_0", true);
-    const idParent0 = b.identifier("_parent_0", true);
-    const idBase0 = b.identifier("_base_0", true);
-    const idSetMetaTable = b.identifier("setmetatable");
+    const idClass0 = b.identifier('_class_0', true);
+    const idParent0 = b.identifier('_parent_0', true);
+    const idBase0 = b.identifier('_base_0', true);
+    const idSetMetaTable = b.identifier('setmetatable');
 
-    const varargLiteral = b.varargLiteral("...", "...");
+    const varargLiteral = b.varargLiteral('...', '...');
 
     if (!node.isPublic) {
-      body.push(b.localStatement([ node.identifier ], []));
+      body.push(b.localStatement([node.identifier], []));
     }
 
-    var doBody = [];
-    var baseTableKeys = [
+    const doBody = [];
+    const baseTableKeys = [
       b.tableKeyString(
-        b.identifier("__name"),
-        b.stringLiteral(strName, `"${strName}"`)
-      )
+        b.identifier('__name'),
+        b.stringLiteral(strName, `"${strName}"`),
+      ),
     ];
 
-    doBody.push(b.localStatement([ idClass0 ], []));
+    doBody.push(b.localStatement([idClass0], []));
 
     if (parent) {
-      doBody.push(b.localStatement([ idParent0 ], [ parent ]));
+      doBody.push(b.localStatement([idParent0], [parent]));
       baseTableKeys.push(b.tableKeyString(
-        b.identifier("__base"),
-        b.memberExpression(parent, ".", b.identifier("__base"))
+        b.identifier('__base'),
+        b.memberExpression(parent, '.', b.identifier('__base')),
       ));
     }
 
@@ -142,7 +140,7 @@ export default class ClassTransformer {
     for (const method of this.setters) {
       baseTableKeys.push(method);
     }
-    
+
     for (const method of this.getters) {
       baseTableKeys.push(method);
     }
@@ -157,21 +155,21 @@ export default class ClassTransformer {
 
     // If no constructor is written but the class extends, we add an vararg super constructor ourself
     if (this.constructorBody.length === 0 && parent) {
-      const constructor = this.constructor;
-      constructor.parameters.push(b.varargLiteral("...", "..."))
-      const init = b.memberExpression(b.identifier("__parent"), ".", b.identifier("__init"));
-      const split = this.name.split(".")
-      let identifier = b.memberExpression(
+      const { constructor } = this;
+      constructor.parameters.push(b.varargLiteral('...', '...'));
+      const init = b.memberExpression(b.identifier('__parent'), '.', b.identifier('__init'));
+      const split = this.name.split('.');
+      const identifier = b.memberExpression(
         b.identifier(split[0]),
-        ".",
-        split.length == 1 && init
+        '.',
+        split.length == 1 && init,
       );
       let currentIdentifier = identifier;
       for (let i = 1; i < split.length; i++) {
         currentIdentifier.identifier = b.memberExpression(
           b.identifier(split[i]),
-          ".",
-          split[i + 1] || init
+          '.',
+          split[i + 1] || init,
         );
         currentIdentifier = currentIdentifier.identifier;
       }
@@ -179,21 +177,21 @@ export default class ClassTransformer {
         b.callExpression(
           identifier,
           [
-            b.varargLiteral("...", "...")
-          ]
-        )
+            b.varargLiteral('...', '...'),
+          ],
+        ),
       );
-      constructor.body.push(buildNode)
+      constructor.body.push(buildNode);
     }
 
-    doBody.push(b.localStatement([ idBase0 ], [
-      b.tableConstructorExpression(baseTableKeys)
+    doBody.push(b.localStatement([idBase0], [
+      b.tableConstructorExpression(baseTableKeys),
     ]));
 
     doBody.push(
       b.assignmentStatement([
-        b.memberExpression(idBase0, ".", b.identifier("__index"))
-      ], [ idBase0 ])
+        b.memberExpression(idBase0, '.', b.identifier('__index')),
+      ], [idBase0]),
     );
 
     if (parent) {
@@ -203,74 +201,73 @@ export default class ClassTransformer {
             idSetMetaTable,
             [
               idBase0,
-              b.memberExpression(idParent0, ".", b.identifier("__index"))
-            ]
-          )
-        )
-      )
+              b.memberExpression(idParent0, '.', b.identifier('__index')),
+            ],
+          ),
+        ),
+      );
     }
 
-
-    var idSelf0 = b.identifier("_self_0", true);
-    var idCls = b.identifier("cls", true);
-    var clsIndex;
-    var clsTable = [
+    const idSelf0 = b.identifier('_self_0', true);
+    const idCls = b.identifier('cls', true);
+    let clsIndex;
+    const clsTable = [
       b.tableKeyString(
-        b.identifier("__init"),
-        this.constructor
+        b.identifier('__init'),
+        this.constructor,
       ),
       b.tableKeyString(
-        b.identifier("__base"),
-        idBase0
-      )/*,
+        b.identifier('__base'),
+        idBase0,
+      ), /* ,
       b.tableKeyString(
         b.identifier("__name"),
         b.stringLiteral(strName, `"${strName}"`)
-      ),*/
-    ]
+      ), */
+    ];
 
     if (parent) {
-      var idParent = b.identifier("_parent", true);
-      var idName = b.identifier("parent", true);
-      var idVal = b.identifier("val", true);
-      clsIndex = b.functionExpression([ idCls, idName ], true, [
-        b.localStatement([ idVal ], [
-          b.callExpression(b.identifier("rawget"), [ idBase0, idName ])
+      const idParent = b.identifier('_parent', true);
+      const idName = b.identifier('parent', true);
+      const idVal = b.identifier('val', true);
+      clsIndex = b.functionExpression([idCls, idName], true, [
+        b.localStatement([idVal], [
+          b.callExpression(b.identifier('rawget'), [idBase0, idName]),
         ]),
         b.ifStatement([
           b.ifClause(
             b.binaryExpression(
-              "==",
+              '==',
               idVal,
-              b.nilLiteral(null, "nil")
+              b.nilLiteral(null, 'nil'),
             ),
             [
               b.localStatement([idParent], [
-                b.callExpression(b.identifier("rawget"), [
+                b.callExpression(b.identifier('rawget'), [
                   idCls,
-                  b.stringLiteral("__parent", `"__parent"`)
-                ])
+                  b.stringLiteral('__parent', '"__parent"'),
+                ]),
               ]),
               b.ifStatement([
                 b.ifClause(idParent, [
                   b.returnStatement([
-                    b.indexExpression(idParent, idName)
-                  ])
-                ])
-              ])
-            ]
+                    b.indexExpression(idParent, idName),
+                  ]),
+                ]),
+              ]),
+            ],
           ),
           b.elseClause([
-            b.returnStatement([ idVal ])
-          ])
-        ])
+            b.returnStatement([idVal]),
+          ]),
+        ]),
       ]);
 
       clsTable.push(
         b.tableKeyString(
-          b.identifier("__parent"),
-          idParent0
-        )
+          b.identifier('__parent'),
+          idParent0,
+        ),
       );
     } else {
       clsIndex = idBase0;
@@ -280,50 +277,50 @@ export default class ClassTransformer {
       clsTable.push(
         b.tableKeyString(
           member.identifier,
-          member.expression
-        )
+          member.expression,
+        ),
       );
     });
 
-    var callBody = [
+    const callBody = [
       b.localStatement(
-        [ idSelf0 ],
-        [ b.callExpression(
+        [idSelf0],
+        [b.callExpression(
           idSetMetaTable,
-          [ b.tableConstructorExpression([]), idBase0 ]
-        ) ]
+          [b.tableConstructorExpression([]), idBase0],
+        )],
       ),
       b.callStatement(
         b.callExpression(
-          b.memberExpression(idCls, ".", b.identifier("__init")),
-          [ idSelf0, varargLiteral ]
-        )
+          b.memberExpression(idCls, '.', b.identifier('__init')),
+          [idSelf0, varargLiteral],
+        ),
       ),
-      b.returnStatement([ idSelf0 ])
+      b.returnStatement([idSelf0]),
     ];
 
     doBody.push(
       b.assignmentStatement(
-        [ idClass0 ],
+        [idClass0],
         [
           b.callExpression(
             idSetMetaTable,
             [
               b.tableConstructorExpression(clsTable),
               b.tableConstructorExpression([
-                b.tableKeyString(b.identifier("__index"), clsIndex),
+                b.tableKeyString(b.identifier('__index'), clsIndex),
                 b.tableKeyString(
-                  b.identifier("__call"),
+                  b.identifier('__call'),
                   b.functionExpression([
                     idCls,
-                    varargLiteral
-                  ], true, callBody)
-                )
-              ])
-            ]
-          )
-        ]
-      )
+                    varargLiteral,
+                  ], true, callBody),
+                ),
+              ]),
+            ],
+          ),
+        ],
+      ),
     );
 
     if (parent) {
@@ -331,32 +328,31 @@ export default class ClassTransformer {
         b.ifStatement(
           [
             b.ifClause(
-              b.memberExpression(idParent0, ".", b.identifier("__inherited")),
+              b.memberExpression(idParent0, '.', b.identifier('__inherited')),
               [
                 b.callStatement(
                   b.callExpression(
-                    b.memberExpression(idParent0, ".", b.identifier("__inherited")),
-                    [ idParent0, idClass0 ]
-                  )
-                )
-              ]
-            )
-          ]
-        )
-      )
+                    b.memberExpression(idParent0, '.', b.identifier('__inherited')),
+                    [idParent0, idClass0],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
     }
 
     doBody.push(
       b.assignmentStatement(
-        [ node.identifier ],
-        [ 
-          singletonVars 
-            ? b.callExpression(idClass0, singletonVars) 
-            : idClass0 
-        ]
-      )
+        [node.identifier],
+        [
+          singletonVars
+            ? b.callExpression(idClass0, singletonVars)
+            : idClass0,
+        ],
+      ),
     );
-
 
     body.push(b.doStatement(doBody));
 
@@ -369,30 +365,33 @@ export default class ClassTransformer {
   }
 
   buildConstructor() {
-    return b.functionExpression([ b.selfExpression() ], true, this.constructorBody);
+    return b.functionExpression([b.selfExpression()], true, this.constructorBody);
   }
 
   buildMember(member) {
     return b.assignmentStatement([
       b.memberExpression(
         b.selfExpression(),
-        ".",
-        member.identifier)
+        '.',
+        member.identifier,
+      ),
     ], [
-      member.expression
-    ])
+      member.expression,
+    ]);
   }
 
   translateCallExpressions(node) {
     if (Array.isArray(node)) {
-      node.forEach(b => this.translateCallExpressions(b));
+      node.forEach((b) => this.translateCallExpressions(b));
 
       return;
     }
 
-    const { body, type, expression, base, identifier } = node;
+    const {
+      body, type, expression, base, identifier,
+    } = node;
     if (body && body.length >= 1) {
-      body.forEach(b => this.translateCallExpressions(b));
+      body.forEach((b) => this.translateCallExpressions(b));
     }
     if (expression) {
       this.translateCallExpressions(expression);
@@ -403,7 +402,7 @@ export default class ClassTransformer {
     if (node.clauses) {
       this.translateCallExpressions(node.clauses);
     }
-    if (identifier && type !== "ClassMethodStatement") {
+    if (identifier && type !== 'ClassMethodStatement') {
       if (this.privateSet.has(identifier.name)) {
         identifier.name = this.getPrivateName(identifier.name);
       }
@@ -412,26 +411,26 @@ export default class ClassTransformer {
       this.translateCallExpressions(node.init);
     }
 
-    //console.log(node.type, node.name, node.visibility, node)
+    // console.log(node.type, node.name, node.visibility, node)
   }
 
   pushBody() {
-    const classBodyPaths = this.path.get("body");
-    let typeMethod
+    const classBodyPaths = this.path.get('body');
+    let typeMethod;
     // First we create a private set
     const privateSet = new Set();
     for (const path of classBodyPaths) {
-      const visibility = path.node.visibility;
-      const name = path.node.identifier.name;
+      const { visibility } = path.node;
+      const { name } = path.node.identifier;
 
-      if (visibility === "PRIVATE") {
+      if (visibility === 'PRIVATE') {
         privateSet.add(name);
       }
     }
     this.privateSet = privateSet;
 
     for (const path of classBodyPaths) {
-      const node = path.node;
+      const { node } = path;
       if (path.isClassMemberStatement()) {
         this.pushMember(node, path);
       }
@@ -441,7 +440,7 @@ export default class ClassTransformer {
       }
 
       if (path.isClassMethodStatement()) {
-        const isConstructor = node.kind === "constructor";
+        const isConstructor = node.kind === 'constructor';
         this.translateCallExpressions(node);
 
         if (isConstructor) {
@@ -449,7 +448,7 @@ export default class ClassTransformer {
 
           if (!this.hasBareSuper && this.isDerived) {
             // TODO: Code frame
-            throw new Error("missing super() call in constructor");
+            throw new Error('missing super() call in constructor');
           }
         }
 
@@ -465,10 +464,9 @@ export default class ClassTransformer {
 
         if (isConstructor) {
           this.pushConstructor(replaceSupers, node, path);
-        }
-        else {
-          if (path.node.identifier.name == "__type") {
-            typeMethod = path
+        } else {
+          if (path.node.identifier.name == '__type') {
+            typeMethod = path;
           }
 
           this.pushMethod(node, path);
@@ -479,16 +477,16 @@ export default class ClassTransformer {
     if (!typeMethod) {
       this.methods.push(
         b.tableKeyString(
-          b.identifier("__type"),
+          b.identifier('__type'),
           b.functionExpression([b.selfExpression()], true, [
             b.returnStatement(
               [
-                b.memberExpression(b.selfExpression(), ".", b.identifier("__name"))
-              ]
-            )
-          ])
-        )
-      )
+                b.memberExpression(b.selfExpression(), '.', b.identifier('__name')),
+              ],
+            ),
+          ]),
+        ),
+      );
     }
   }
 
@@ -497,17 +495,17 @@ export default class ClassTransformer {
     if (!this.isDerived) return;
 
     const path = this.userConstructorPath;
-    const body = path.get("body");
+    const body = path.get('body');
 
-    let guaranteedSuper = !!this.bareSupers.length;
+    const guaranteedSuper = !!this.bareSupers.length;
 
-    const superRef = this.superRef;
+    const { superRef } = this;
   }
 
   pushConstructor(replaceSupers, node, path) {
     this.bareSupers = replaceSupers.bareSupers;
 
-    const constructor = this.constructor;
+    const { constructor } = this;
 
     constructor.parameters.push.apply(constructor.parameters, node.parameters);
 
@@ -516,18 +514,18 @@ export default class ClassTransformer {
     this.hasConstructor = true;
 
     for (const n of node.body) {
-      if (n.type != "CallStatement") continue;
+      if (n.type != 'CallStatement') continue;
       if (!n.expression) continue;
-      if (n.expression.type != "CallExpression") continue;
-      if (n.expression.base.type != "MemberExpression") continue;
-      if (n.expression.base.base.type != "SelfExpression") continue;
+      if (n.expression.type != 'CallExpression') continue;
+      if (n.expression.base.type != 'MemberExpression') continue;
+      if (n.expression.base.base.type != 'SelfExpression') continue;
 
       for (const arg of n.expression.arguments) {
-        if (arg.type != "MemberExpression") continue;
-        if (arg.base.type != "SelfExpression") continue;
+        if (arg.type != 'MemberExpression') continue;
+        if (arg.base.type != 'SelfExpression') continue;
 
         if (this.privateSet.has(arg.identifier.name)) {
-          arg.identifier.name = this.getPrivateName(arg.identifier.name)
+          arg.identifier.name = this.getPrivateName(arg.identifier.name);
         }
       }
     }
@@ -536,7 +534,7 @@ export default class ClassTransformer {
 
     if (false) {
       const state = {
-        bareSupers: []
+        bareSupers: [],
       };
 
       constructorPath.traverse({
@@ -544,56 +542,54 @@ export default class ClassTransformer {
           const callNode = path.node;
 
           let isSuperCall = false;
-          if (callNode.base.type == "SuperExpression") {
+          if (callNode.base.type == 'SuperExpression') {
             state.bareSupers.push(path);
 
-            const superPath = path.get("base");
+            const superPath = path.get('base');
             const superNode = superPath.node;
 
             superPath.replaceWith(
               b.memberExpression(
                 superNode,
-                ".",
-                b.identifier("__init")
-              )
+                '.',
+                b.identifier('__init'),
+              ),
             );
 
             isSuperCall = true;
-          }
-          else {
-            const basePath = path.get("base");
+          } else {
+            const basePath = path.get('base');
             basePath.traverse({
               SuperExpression(path) {
                 path.stop();
                 isSuperCall = true;
               },
               enter(path) {
-                if (path.type !== "MemberExpression" &&
-                    path.type !== "SuperExpression") {
-
+                if (path.type !== 'MemberExpression'
+                    && path.type !== 'SuperExpression') {
                   path.stop();
                 }
-              }
+              },
             });
           }
 
           if (isSuperCall) {
             console.log(path);
-            path.get("arguments").insertBefore(b.selfExpression());
+            path.get('arguments').insertBefore(b.selfExpression());
           }
         },
 
         SuperExpression(path, state) {
           if (!state.bareSupers.length) {
-            throw new Error("Something");
+            throw new Error('Something');
           }
 
           path.replaceWith(
             b.memberExpression(
               node.identifier,
-              ".",
-              b.identifier("__parent"),
-            )
+              '.',
+              b.identifier('__parent'),
+            ),
           );
         },
 
@@ -602,7 +598,7 @@ export default class ClassTransformer {
         },
 
         enter(path) {
-        }
+        },
       }, state);
     }
   }
@@ -610,101 +606,99 @@ export default class ClassTransformer {
   getPrivateName(fieldName) {
     let { name } = this;
     name = name.charAt(0).toLowerCase() + name.slice(1);
-    name = name.replace(/\./g, "_")
+    name = name.replace(/\./g, '_');
 
-    return name + "__" + fieldName;
+    return `${name}__${fieldName}`;
   }
 
   pushMethod(node, path) {
-    var params = node.parameters.slice();
+    const params = node.parameters.slice();
     if (!node.isStatic) {
       params.unshift(b.selfExpression());
     }
 
     this.userMethods.push(node);
 
-    const visibility = node.visibility;
-    const identifier = node.identifier;
+    const { visibility } = node;
+    const { identifier } = node;
     if (visibility) {
       switch (visibility) {
-        case "PRIVATE":
-            identifier.name = this.getPrivateName(identifier.name)
+        case 'PRIVATE':
+          identifier.name = this.getPrivateName(identifier.name);
           break;
 
         default:
           break;
       }
     }
-    //console.log(identifier);
+    // console.log(identifier);
 
-    var exp = b.functionExpression(params, true, node.body);
+    const exp = b.functionExpression(params, true, node.body);
     exp.async = node.async;
     exp.blockAsync = node.async;
     if (node.isStatic) {
       this.staticMembers.push({
         identifier,
-        expression: exp
+        expression: exp,
       });
-    }
-    else {
+    } else {
       this.methods.push(b.tableKeyString(
         identifier,
-        exp
+        exp,
       ));
     }
   }
 
   pushGetSet(node, path) {
-    const rawName = node.identifier.name
-    const name = rawName.charAt(0).toUpperCase() + rawName.slice(1)
+    const rawName = node.identifier.name;
+    const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
 
     if (node.isGet) {
       this.getters.push(b.tableKeyString(
         b.identifier(`get${name}`),
-        b.functionExpression([ b.selfExpression() ], true, [
+        b.functionExpression([b.selfExpression()], true, [
           b.returnStatement([
             b.memberExpression(
               b.selfExpression(),
-              ".",
-              b.identifier(rawName)
-            )
-          ])
-        ])
-      ))
+              '.',
+              b.identifier(rawName),
+            ),
+          ]),
+        ]),
+      ));
     }
     if (node.isSet) {
-      const idParam = b.identifier(rawName)
+      const idParam = b.identifier(rawName);
 
-      var test = b.tableKeyString(
+      const test = b.tableKeyString(
         b.identifier(`set${name}`),
-        b.functionExpression([ b.selfExpression(), idParam ], true, [
+        b.functionExpression([b.selfExpression(), idParam], true, [
           b.assignmentStatement([
-            b.memberExpression(b.selfExpression(), ".", b.identifier(rawName))
+            b.memberExpression(b.selfExpression(), '.', b.identifier(rawName)),
           ], [
-            idParam
+            idParam,
           ]),
           b.returnStatement([
-            b.selfExpression()
-          ])
-        ])
-      )
+            b.selfExpression(),
+          ]),
+        ]),
+      );
 
-      this.setters.push(test)
+      this.setters.push(test);
     }
   }
 
   pushMember(node, path) {
     this.userMembers.push(node);
 
-    var member = this.buildMember(node);
+    const member = this.buildMember(node);
 
     if (node.isStatic) {
       this.staticMembers.push({
         identifier: node.identifier,
-        expression: node.expression
+        expression: node.expression,
       });
-    }
-    else {
+    } else {
       this.members.push(member);
     }
   }

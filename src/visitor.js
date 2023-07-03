@@ -1,16 +1,21 @@
-import _ from "underscore";
-import clone from "lodash/clone";
-import * as virtualTypes from "./virtual-types";
-import * as t from "./types";
-import * as cache from "./cache";
-import NodePath from "./path";
+import _ from 'underscore';
+import clone from 'lodash/clone';
+import * as virtualTypes from './virtual-types';
+import * as t from './types';
+import * as cache from './cache';
+import NodePath from './path';
 
 export class TraversalContext {
   visitors;
+
   state;
+
   scope;
+
   parentPath;
+
   queue = null;
+
   priorityQueue = null;
 
   constructor(visitors, state, scope, parentPath) {
@@ -26,7 +31,7 @@ export class TraversalContext {
       parent: node,
       container,
       key,
-      listKey
+      listKey,
     });
   }
 
@@ -34,15 +39,14 @@ export class TraversalContext {
     if (this.queue) {
       if (notPriority) {
         this.queue.push(path);
-      }
-      else {
+      } else {
         this.priorityQueue.push(path);
       }
     }
   }
 
   shouldVisit(node) {
-    let visitors = this.visitors;
+    const { visitors } = this;
     if (visitors.enter || visitors.exit) return true;
 
     if (visitors[node.type]) return true;
@@ -76,12 +80,11 @@ export class TraversalContext {
   visitSingle(node, key) {
     if (this.shouldVisit(node)) {
       return this.visitQueue([
-        this.create(node, node, key)
+        this.create(node, node, key),
       ]);
     }
-    else {
-      return false;
-    }
+
+    return false;
   }
 
   visitQueue(queue) {
@@ -133,9 +136,8 @@ export class TraversalContext {
     if (Array.isArray(nodes)) {
       return this.visitMultiple(nodes, node, key);
     }
-    else {
-      return this.visitSingle(node, key);
-    }
+
+    return this.visitSingle(node, key);
   }
 }
 
@@ -145,21 +147,21 @@ export default function traverse(node, visitors, state, scope, parentPath) {
   traverse.node(node, visitors, state, scope, parentPath);
 }
 
-traverse.node = function(node, visitors, state, scope, parentPath) {
+traverse.node = function (node, visitors, state, scope, parentPath) {
   const keys = t.VISITOR_KEYS[node.type];
   if (!keys) return;
 
-  var context = new TraversalContext(visitors, state, scope, parentPath);
+  const context = new TraversalContext(visitors, state, scope, parentPath);
   for (const key of keys) {
     if (context.visit(node, key)) return;
   }
 };
 
-traverse.clearNode = function(node, visitors) {
-  cache.path.delete(node)
+traverse.clearNode = function (node, visitors) {
+  cache.path.delete(node);
 };
 
-traverse.clearCache = function() {
+traverse.clearCache = function () {
   cache.clear();
 };
 
@@ -167,20 +169,20 @@ traverse.clearCache.clearPath = cache.clearPath;
 traverse.clearCache.clearScope = cache.clearScope;
 
 function shouldIgnoreKey(key) {
-  if (key[0] === "_") return true;
+  if (key[0] === '_') return true;
 
-  if (key === "enter" || key === "exit" || key === "shouldSkip") return true;
+  if (key === 'enter' || key === 'exit' || key === 'shouldSkip') return true;
 
-  if (key === "noScope") return true;
+  if (key === 'noScope') return true;
 
   return false;
 }
 
-traverse.explodeVisitors = function(visitors) {
+traverse.explodeVisitors = function (visitors) {
   for (const type in visitors) {
     if (shouldIgnoreKey(type)) continue;
 
-    const parts = type.split("|");
+    const parts = type.split('|');
     if (parts.length === 1) continue;
 
     const fns = visitors[type];
@@ -228,7 +230,7 @@ traverse.explodeVisitors = function(visitors) {
 
     const fns = visitors[nodeType];
 
-    let aliases = t.FLIPPED_ALIAS_KEYS[nodeType];
+    const aliases = t.FLIPPED_ALIAS_KEYS[nodeType];
     if (!aliases) continue;
 
     delete visitors[nodeType];
@@ -237,8 +239,7 @@ traverse.explodeVisitors = function(visitors) {
       const existing = visitors[alias];
       if (existing) {
         traverse.mergePair(existing, fns);
-      }
-      else {
+      } else {
         visitors[alias] = clone(fns);
       }
     }
@@ -251,24 +252,24 @@ traverse.explodeVisitors = function(visitors) {
   }
 };
 
-traverse.ensureEntranceObjects = function(visitor) {
+traverse.ensureEntranceObjects = function (visitor) {
   for (const key in visitor) {
     if (shouldIgnoreKey(key)) continue;
 
     const fns = visitor[key];
 
-    if (typeof fns == "function") {
+    if (typeof fns === 'function') {
       visitor[key] = { enter: fns };
     }
   }
 };
 
-traverse.ensureCallbackArrays = function(visitor) {
-  if (visitor.enter && !Array.isArray(visitor.enter)) visitor.enter = [ visitor.enter ];
-  if (visitor.exit && !Array.isArray(visitor.exit)) visitor.exit = [ visitor.exit ];
+traverse.ensureCallbackArrays = function (visitor) {
+  if (visitor.enter && !Array.isArray(visitor.enter)) visitor.enter = [visitor.enter];
+  if (visitor.exit && !Array.isArray(visitor.exit)) visitor.exit = [visitor.exit];
 };
 
-traverse.wrapCheck = function(wrapper, fn) {
+traverse.wrapCheck = function (wrapper, fn) {
   const newFn = function (path) {
     if (wrapper.checkPath(path)) {
       return fn.apply(this, arguments);
@@ -276,9 +277,9 @@ traverse.wrapCheck = function(wrapper, fn) {
   };
   newFn.toString = () => fn.toString();
   return newFn;
-}
+};
 
-traverse.mergePair = function(dest, src) {
+traverse.mergePair = function (dest, src) {
   for (const key in src) {
     dest[key] = [].concat(dest[key] || [], src[key]);
   }

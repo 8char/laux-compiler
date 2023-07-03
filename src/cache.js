@@ -10,7 +10,6 @@ export let path = new WeakMap();
 */
 export let scope = new WeakMap();
 
-
 /**
   Clears both the path and scope WeakMaps.
 */
