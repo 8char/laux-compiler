@@ -11,14 +11,14 @@ export default class Whitespace {
     let endToken;
     const { tokens } = this;
 
-    let index = this._findToken((token) => token.range[0] - node.range[0], 0, tokens.length);
+    let index = this.findToken((token) => token.range[0] - node.range[0], 0, tokens.length);
     if (index >= 0) {
-      while (index && node.range[0] === tokens[index - 1].range[0]) --index;
+      while (index && node.range[0] === tokens[index - 1].range[0]) index -= 1;
       startToken = tokens[index - 1];
       endToken = tokens[index];
     }
 
-    return this._getNewlinesBetween(startToken, endToken);
+    return this.getNewlinesBetween(startToken, endToken);
   }
 
   getNewlinesAfter(node) {
@@ -26,9 +26,9 @@ export default class Whitespace {
     let endToken;
     const { tokens } = this;
 
-    let index = this._findToken((token) => token.range[1] - node.range[1], 0, tokens.length);
+    let index = this.findToken((token) => token.range[1] - node.range[1], 0, tokens.length);
     if (index >= 0) {
-      while (index && node.range[1] === tokens[index - 1].range[1]) --index;
+      while (index && node.range[1] === tokens[index - 1].range[1]) index -= 1;
       startToken = tokens[index];
       endToken = tokens[index + 1];
       if (endToken.value === ',') endToken = tokens[index + 2];
@@ -38,41 +38,41 @@ export default class Whitespace {
       return 1;
     }
 
-    return this._getNewlinesBetween(startToken, endToken);
+    return this.getNewlinesBetween(startToken, endToken);
   }
 
-  _getNewlinesBetween(startToken, endToken) {
+  getNewlinesBetween(startToken, endToken) {
     if (!endToken || !startToken) return 0;
 
     const start = startToken ? startToken.loc.end.line : 1;
     const end = endToken.loc.start.line;
     let lines = 0;
 
-    for (let line = start; line < end; line++) {
+    for (let line = start; line < end; line += 1) {
       if (typeof this.used[line] === 'undefined') {
         this.used[line] = true;
-        lines++;
+        lines += 1;
       }
     }
 
     return lines;
   }
 
-  _findToken(test, start, end) {
+  findToken(test, start, end) {
     if (start >= end) return -1;
 
-    const middle = (start + end) >>> 1;
+    const middle = Math.floor((start + end) / 2);
     const match = test(this.tokens[middle]);
 
     if (match < 0) {
-      return this._findToken(test, middle + 1, end);
+      return this.findToken(test, middle + 1, end);
     }
     if (match > 0) {
-      return this._findToken(test, start, middle);
+      return this.findToken(test, start, middle);
     }
 
     return middle;
 
-    return -1;
+    // return -1;
   }
 }
