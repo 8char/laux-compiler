@@ -165,7 +165,10 @@ export default class NodePath {
 
   getData(key, def) {
     let val = this.data[key];
-    if (!val && def) val = this.data[key] = def;
+    if (!val && def) {
+      this.data[key] = def;
+      val = this.data[key];
+    }
     return val;
   }
 
@@ -183,15 +186,16 @@ export default class NodePath {
     return this.getSibling(this.key - 1);
   }
 
-  getPrevSibling() {
+  getNextSibling() {
     return this.getSibling(this.key + 1);
   }
 
   findParent(test) {
-    let path = this;
+    let path = this.parentPath;
 
-    while (path = path.parentPath) {
+    while (path) {
       if (test(path)) return path;
+      path = path.parentPath;
     }
 
     return null;
@@ -202,8 +206,8 @@ export default class NodePath {
 
     do {
       if (test(path)) return path;
-    }
-    while (path = path.parentPath);
+      path = path.parentPath;
+    } while (path);
 
     return null;
   }
@@ -216,10 +220,10 @@ export default class NodePath {
     let path = this;
     const paths = [];
 
-    do {
+    while (path) {
       paths.push(path);
+      path = path.parentPath;
     }
-    while (path = path.parentPath);
 
     return paths;
   }
@@ -277,9 +281,9 @@ export default class NodePath {
   resync() {
     if (this.removed) return;
 
-    this._resyncParent();
-    this._resyncList();
-    this._resyncKey();
+    this.resyncParent();
+    this.resyncList();
+    this.resyncKey();
   }
 
   traverse(visitors, state) {
@@ -571,11 +575,11 @@ export default class NodePath {
     return false;
   }
 
-  _resyncParent() {
+  resyncParent() {
     if (this.parentPath) this.parent = this.parentPath.node;
   }
 
-  _resyncKey() {
+  resyncKey() {
     if (!this.container) return;
     if (this.node === this.container[this.key]) return;
 
@@ -597,7 +601,7 @@ export default class NodePath {
     this.key = null;
   }
 
-  _resyncList() {
+  resyncList() {
     if (!this.parent || !this.inList) return;
 
     const newContainer = this.parent[this.listKey];
