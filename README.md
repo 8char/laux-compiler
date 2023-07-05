@@ -285,3 +285,17 @@ end
 ```
 
 There is no ipairs equivalent of this.
+
+## Formated string
+
+You can make a formated string by using the <code>`</code> character and enclosing your variable names in braces :
+
+```lua
+print(string.format("there are %d %s", number, string)
+```
+
+By doing this in LAUX
+
+```lua
+print(`there are ${number} ${string}`)
+```
