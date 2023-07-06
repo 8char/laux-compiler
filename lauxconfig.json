@@ -3,5 +3,7 @@
     "input": "./laux",
     "output": "./lua"
   },
-  "merges": []
+  "merges": [],
+  "debug": true,
+  "ast": true
 }
