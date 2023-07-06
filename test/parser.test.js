@@ -10,6 +10,7 @@ import shortcutExpressions from './parser/shortcutexpressions.test';
 import compilerClasses from './compiler/classes.test';
 import safeMemberTests from './parser/safemembernavigator.test';
 import forofTests from './parser/forof.test';
+import decoratorsTest from './parser/decorators.test';
 
 // TODO: Implement a parse & compiler spec for Types
 // TODO: Implement a compiler spec for Mutations
@@ -61,6 +62,10 @@ describe('Parser', () => {
   describe('#for of expression', () => {
     it('parses for of expression', forofTests.forofExpression);
     it('parses for of body expression', forofTests.forofBodyExpression);
+  });
+
+  describe('decorator expression', () => {
+    it('parses decorator expression', decoratorsTest.decoratorExpression);
   });
 });
 
