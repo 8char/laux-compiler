@@ -6,36 +6,7 @@ import glob from 'fast-glob';
 import highlighter from '../highlighter';
 import compile from './compile';
 import CodeGenerator from '../codegenerator';
-
-class CacheFile {
-  constructor(relativePath) {
-    this.parse = path.parse(relativePath);
-  }
-
-  getCleanPath() {
-    return path.join(this.parse.dir, this.parse.name).replace(/\\/g, '/');
-  }
-
-  getPath() {
-    return path.join(this.parse.dir, this.parse.base).replace(/\\/g, '/');
-  }
-
-  setContent(content) {
-    this.content = content;
-  }
-
-  getContent() {
-    return this.content;
-  }
-
-  setCompiledFile(compiledFile) {
-    this.compiledFile = compiledFile;
-  }
-
-  getCompiledFile() {
-    return this.compiledFile;
-  }
-}
+import CacheFile from './fileCache';
 
 export default class FileHandler {
   // Disable transpiling at the start
