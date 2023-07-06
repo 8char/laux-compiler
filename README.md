@@ -99,6 +99,52 @@ Foo.Bar = () -> print(self) end -- Foo.Bar = function(self) print(self) end
 
 Thin arrow is essentially just a fat arrow, but it automatically adds self, just like : adds self automatically in contrast to . in default Lua.
 
+## Decorators
+
+LAUX adds decorators which can mutate functions to allow for things such as deprecation, singeltons, registries, mixin functionality, memoization, validation, rate limiting, caching, authentication/authorization, logging, etc...
+*You can currently only have one decorator per function, however you can combine them in to one larger decorator*
+
+```lua
+-- These deprecated functions can be defined in
+-- your library & be imported using LAUX's
+-- import statement
+local function deprecated(func)
+  return function()
+    local name = nil
+    local index = 1
+
+    while true do
+        local info = debug.getinfo(func, "S")
+        if not info then
+            break
+        end
+
+        if info.what == "Lua" and info.name then
+            name = info.name
+            break
+        end
+
+        func = debug.getupvalue(func, index)
+        if not func then
+            break
+        end
+
+        index = index + 1
+    end
+
+    MsgC(Color(255, 165, 0), "[WARN] The function " .. name .. " is deprecated. Please look to using alternatives as this will cease to exist!")
+  end
+end
+
+-- Imagine we have this TestFunc that comes from SomeLibrary,
+-- we want to warn users upon each use so that they use
+-- something different
+@deprecated
+function PrintPlayerName(ply)
+  print(ply:Nick())
+end
+```
+
 ## Types
 
 **This is real time type checking, so don't run it in something that gets run A TON, like every frame**
