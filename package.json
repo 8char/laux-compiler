@@ -42,10 +42,9 @@
   },
   "scripts": {
     "test": "mocha --reporter spec --compilers js:@babel/register",
-    "start": "node index.js watch ./laux ./lua",
+    "dev": "node dev.cjs workspace",
     "build": "babel src --out-dir dist",
     "prepublish": "npm run build",
-    "dev": "nodemon index.js watch ./laux ./lua -a",
     "semantic-release": "semantic-release"
   },
   "files": [
