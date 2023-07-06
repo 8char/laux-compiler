@@ -109,7 +109,7 @@ LAUX adds decorators which can mutate functions to allow for things such as depr
 -- your library & be imported using LAUX's
 -- import statement
 local function deprecated(func)
-  return function()
+  return function(...)
     local name = nil
     local index = 1
 
@@ -133,6 +133,7 @@ local function deprecated(func)
     end
 
     MsgC(Color(255, 165, 0), "[WARN] The function " .. name .. " is deprecated. Please look to using alternatives as this will cease to exist!")
+    func(...)
   end
 end
 
