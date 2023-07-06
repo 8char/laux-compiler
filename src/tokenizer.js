@@ -273,6 +273,9 @@ function lex() {
       if (next === 58) return scanPunctuator('::');
       return scanPunctuator(':');
 
+    case 64: // :
+      return scanPunctuator('@');
+
     case 91: // [
     // Check for a multiline string, they begin with [= or [[
       if (next === 91 || next === 61) return scanLongStringLiteral();

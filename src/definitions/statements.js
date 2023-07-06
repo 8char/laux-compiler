@@ -26,6 +26,12 @@ defineType('CallStatement', {
   aliases: ['Statement'],
 });
 
+defineType('DecoratorStatement', {
+  visitors: ['expression'],
+  builder: ['expression'],
+  aliases: ['Statement'],
+});
+
 defineType('AssignmentStatement', {
   visitors: ['variables', 'init'],
   builder: ['variables', 'init'],

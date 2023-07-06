@@ -30,7 +30,7 @@ const defaultOptions = {
   @param {Object} expression - The AST node for the expression
   @param {boolean} isLocal - Whether the identifier should be local to the scope
   @param {string} name - An optional name to include in the identifier
-  @returns {Object} - The AST node for the identifier
+  @returns {Object} The AST node for the identifier
 */
 
 const generateLAUIdentifier = function (expression, isLocal, name) {
@@ -45,7 +45,7 @@ const generateLAUIdentifier = function (expression, isLocal, name) {
   Generates a LAU assert statement with the given expression and message
   @param {Object} expression - The AST node for the expression to check
   @param {string} message - The error message to display if the assertion fails
-  @returns {Object} - The AST node for the assert statement
+  @returns {Object} The AST node for the assert statement
 */
 
 const generateAssert = function (expression, message) {
@@ -60,7 +60,7 @@ const generateAssert = function (expression, message) {
 /**
   Returns the identifier for a utility function, creating it if it doesn't already exist
   @param {string} name - The name of the utility function
-  @returns {Object} - The AST node for the identifier
+  @returns {Object} The AST node for the identifier
 */
 
 const getUtilityFunctionIdentifier = function (name) {
@@ -93,7 +93,7 @@ const generateUtilityFunctions = function () {
   Attaches location information from an original AST node to a compiled AST node
   @param {Object} node - The original AST node to copy location information from
   @param {Object} compiled - The compiled AST node to add location information to
-  @returns {Object} - The compiled AST node with location information added
+  @returns {Object} The compiled AST node with location information added
 */
 
 const attachLocations = function (node, compiled) {
@@ -205,6 +205,24 @@ const debugWrapScope = function (node, scope) {
     ),
   ];
 };
+
+function safeIndexer(obj) {
+  if (Array.isArray(obj)) {
+    // If the object is an array, map over its elements
+    return obj.map(safeIndexer);
+  }
+
+  if (typeof obj === 'object' && obj !== null) {
+    const result = {};
+    Object.keys(obj).forEach((key) => {
+      const value = obj[key] === ':' ? '.' : safeIndexer(obj[key]);
+      result[key] = value;
+    });
+    return result;
+  }
+
+  return obj;
+}
 
 /**
   Compiles a list of statements into an array of AST nodes.
@@ -1067,7 +1085,7 @@ var compileExpression = function (expression) {
   @param {Object} statement.identifier - the function identifier
   @param {Array} statement.parameters - an array of parameters for the function
   @param {Array} statement.body - the body of the function
-  @returns {Object} - the compiled function declaration
+  @returns {Object} the compiled function declaration
 */
 
 function compileFunctionStatement(statement) {
@@ -1217,7 +1235,7 @@ function compileFunctionStatement(statement) {
   Compiles a safe member expression into a binary expression that checks if all the base objects exist before
   attempting to access the member.
   @param {Object} expression - The expression to compile.
-  @returns {Object} - A binary expression that checks if all the base objects exist before attempting to access the member.
+  @returns {Object} A binary expression that checks if all the base objects exist before attempting to access the member.
 */
 
 function compileSafeMemberExpression(expression) {
@@ -1567,6 +1585,22 @@ const compiler = {
             promiseReturn.asyncBlockReturn = true;
             // node.body.push.apply(node.body, [ promiseReturn ]);
           }
+        }
+
+        if (node.decorators) {
+          path.insertAfter(
+            b.assignmentStatement(
+              [
+                safeIndexer(node.identifier),
+              ],
+              [
+                b.callExpression(
+                  node.decorators[0],
+                  [safeIndexer(node.identifier)],
+                ),
+              ],
+            ),
+          );
         }
       },
 

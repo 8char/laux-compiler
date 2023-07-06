@@ -450,6 +450,7 @@ function parseStatement() {
 
   if (Punctuator === token.type) {
     if (consume('::')) return parseLabelStatement();
+    if (consume('@')) return parseDecoratorStatement();
   }
 
   // Assignments memorizes the location and pushes it manually for wrapper
@@ -462,10 +463,10 @@ function parseStatement() {
   return parseAssignmentOrCallStatement();
 }
 
-function parseAsyncStatement() {
+function parseAsyncStatement(decorators) {
   expect('function');
   const name = parseFunctionName();
-  return parseFunctionDeclaration(name, undefined, undefined, true);
+  return parseFunctionDeclaration(name, undefined, undefined, true, decorators);
 }
 
 function parseImportStatement() {
@@ -526,6 +527,20 @@ function parseLabelStatement() {
 
   expect('::');
   return finishNode(b.labelStatement(label));
+}
+
+//     decorator ::= '@' exp
+
+function parseDecoratorStatement() {
+  const decorator = parseExpectedExpression();
+  const decorators = [decorator];
+
+  if (consume('local')) return parseLocalStatement(decorators);
+  if (consume('async')) return parseAsyncStatement(decorators);
+
+  expect('function');
+  const name = parseFunctionName();
+  return parseFunctionDeclaration(name, undefined, undefined, undefined, decorators);
 }
 
 //     break ::= 'break'
@@ -931,7 +946,7 @@ function parseClassMethodStatement(expression, isStatic, isConstructor, async, v
 //     local ::= 'local' 'function' Name funcdecl
 //        | 'local' Name {',' Name} ['=' exp {',' exp}]
 
-function parseLocalStatement() {
+function parseLocalStatement(decorators) {
   let name;
 
   if (Identifier === token.type || token.value == '{') {
@@ -997,7 +1012,7 @@ function parseLocalStatement() {
     }
 
     // MemberExpressions are not allowed in local function statements.
-    return parseFunctionDeclaration(name, true, undefined, true);
+    return parseFunctionDeclaration(name, true, undefined, true, decorators);
   }
   if (consume('function')) {
     name = parseIdentifier();
@@ -1008,7 +1023,7 @@ function parseLocalStatement() {
     }
 
     // MemberExpressions are not allowed in local function statements.
-    return parseFunctionDeclaration(name, true);
+    return parseFunctionDeclaration(name, true, undefined, undefined, decorators);
   }
   raiseUnexpectedToken('<name>', token);
 }
@@ -1141,7 +1156,7 @@ function parseSelfExpression() {
 //     funcdecl ::= '(' [parlist] ')' block 'end'
 //     parlist ::= Name {',' Name} | [',' '...'] | '...'
 
-function parseFunctionDeclaration(name, isLocal, isExpression, isAsync) {
+function parseFunctionDeclaration(name, isLocal, isExpression, isAsync, decorators) {
   const parameters = [];
   expect('(');
 
@@ -1214,6 +1229,7 @@ function parseFunctionDeclaration(name, isLocal, isExpression, isAsync) {
   const node = b.functionDeclaration(name, parameters, isLocal, body);
   node.async = isAsync;
   node.blockAsync = isAsync;
+  node.decorators = decorators;
   return finishNode(node);
 }
 
