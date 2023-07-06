@@ -1,6 +1,10 @@
+import Receive, ReadString from net
+import runspeed, walkspeed from GAMEMODE
+
 class Test
   public constructor()
     self:receive("CreateTag", self.receiveCreateTag)
+    print(runspeed, walkspeed)
   end
 
   private receiveCreateTag(ply)
@@ -13,3 +17,5 @@ class Test
     return `Hello ${personName}`
   end
 end
+
+Receive("...", () => print(ReadString()) end)
