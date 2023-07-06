@@ -291,6 +291,26 @@ if (((groups and groups[groupKind]) and groups[groupKind].members) and groups[gr
 end
 ```
 
+## Import Statement
+
+The import statement allows for importing of members of an object. The import statement itself doesn't transpile down in to anything, however what it does is it adds the parent object before each index of it in code. Heres an example:
+
+```lua
+import print, warn, log from AtlasUI
+
+print("Hello there!")
+warn("Hello there!")
+log("Hello there!")
+```
+
+Will transpile down to:
+
+```lua
+AtlasUI.print("Hello there!")
+AtlasUI.warn("Hello there!")
+AtlasUI.log("Hello there!")
+```
+
 ## Spread operator
 
 This is the same operator found in JavaScript. It functions like table.concat/unpack.
