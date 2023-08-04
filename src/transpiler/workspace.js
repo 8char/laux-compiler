@@ -1,4 +1,4 @@
-import path from 'path';
+import path from "path";
 
 function getAbsolutePath(p) {
   if (p) {

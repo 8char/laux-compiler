@@ -1,10 +1,11 @@
-import extend from 'extend';
+import extend from "extend";
 
-import tokenizer from './tokenizer';
-import * as b from './builder';
+import tokenizer from "./tokenizer";
+import * as b from "./builder";
 
-let input; let options; let
-  length;
+let input;
+let options;
+let length;
 let isInClassMethod = false;
 let isInClassConstructor = false;
 let classConstructorToken;
@@ -37,21 +38,26 @@ const defaultOptions = {
 
 // The available tokens
 
-const EOF = 'EOF'; const StringLiteral = 'StringLiteral'; const Keyword = 'Keyword'; const Identifier = 'Identifier';
-const NumericLiteral = 'NumericLiteral'; const Punctuator = 'Punctuator'; const BooleanLiteral = 'BooleanLiteral';
-const NilLiteral = 'NilLiteral'; const
-  VarargLiteral = 'VarargLiteral';
+const EOF = "EOF";
+const StringLiteral = "StringLiteral";
+const Keyword = "Keyword";
+const Identifier = "Identifier";
+const NumericLiteral = "NumericLiteral";
+const Punctuator = "Punctuator";
+const BooleanLiteral = "BooleanLiteral";
+const NilLiteral = "NilLiteral";
+const VarargLiteral = "VarargLiteral";
 
 // As this parser is a bit different from luas own, the error messages
 // will be different in some situations.
 
 const errors = {
-  unexpected: 'unexpected %1 \'%2\' near \'%3\'',
-  expected: '\'%1\' expected near \'%2\'',
-  expectedToken: '%1 expected near \'%2\'',
-  unfinishedString: 'unfinished string near \'%1\'',
-  malformedNumber: 'malformed number near \'%1\'',
-  invalidVar: 'invalid left-hand side of assignment near \'%1\'',
+  unexpected: "unexpected %1 '%2' near '%3'",
+  expected: "'%1' expected near '%2'",
+  expectedToken: "%1 expected near '%2'",
+  unfinishedString: "unfinished string near '%1'",
+  malformedNumber: "malformed number near '%1'",
+  invalidVar: "invalid left-hand side of assignment near '%1'",
 };
 
 let imports = new Map();
@@ -101,7 +107,10 @@ function indexOfObject(array, property, element) {
 
 function sprintf(format) {
   const args = slice.call(arguments, 1);
-  format = format.replace(/%(\d)/g, (match, index) => `${args[index - 1]}` || '');
+  format = format.replace(
+    /%(\d)/g,
+    (match, index) => `${args[index - 1]}` || "",
+  );
   return format;
 }
 
@@ -122,19 +131,21 @@ function sprintf(format) {
 
 function raise(token) {
   const message = sprintf.apply(null, slice.call(arguments, 1));
-  let error; let
-    col;
+  let error;
+  let col;
 
   let errToken = token;
   let errIndex = errToken.range[0];
-  if (token.type == 'EOF') {
+  if (token.type == "EOF") {
     errToken = previousToken;
     errIndex = errToken.range[1];
   }
 
   const { start } = errToken.loc;
 
-  error = new SyntaxError(sprintf('[%1:%2] %3', start.line, start.column, message));
+  error = new SyntaxError(
+    sprintf("[%1:%2] %3", start.line, start.column, message),
+  );
   error.index = errIndex;
   error.line = start.line;
   error.column = start.column;
@@ -166,22 +177,34 @@ function raiseUnexpectedToken(type, token) {
 // If there's no token in the buffer it means we have reached <eof>.
 
 function unexpected(found, near) {
-  if (typeof near === 'undefined') near = lookahead.value;
-  if (typeof found.type !== 'undefined') {
+  if (typeof near === "undefined") near = lookahead.value;
+  if (typeof found.type !== "undefined") {
     let type;
     switch (found.type) {
-      case StringLiteral: type = 'string'; break;
-      case Keyword: type = 'keyword'; break;
-      case Identifier: type = 'identifier'; break;
-      case NumericLiteral: type = 'number'; break;
-      case Punctuator: type = 'symbol'; break;
-      case BooleanLiteral: type = 'boolean'; break;
+      case StringLiteral:
+        type = "string";
+        break;
+      case Keyword:
+        type = "keyword";
+        break;
+      case Identifier:
+        type = "identifier";
+        break;
+      case NumericLiteral:
+        type = "number";
+        break;
+      case Punctuator:
+        type = "symbol";
+        break;
+      case BooleanLiteral:
+        type = "boolean";
+        break;
       case NilLiteral:
-        return raise(found, errors.unexpected, 'symbol', 'nil', near);
+        return raise(found, errors.unexpected, "symbol", "nil", near);
     }
     return raise(found, errors.unexpected, type, found.value, near);
   }
-  return raise(found, errors.unexpected, 'symbol', found, near);
+  return raise(found, errors.unexpected, "symbol", found, near);
 }
 
 let tokens;
@@ -229,17 +252,17 @@ function expect(value) {
 // ### Validation functions
 
 function isUnary(token) {
-  if (Punctuator === token.type) return '#-~!'.indexOf(token.value) >= 0;
-  if (Keyword === token.type) return token.value === 'not';
+  if (Punctuator === token.type) return "#-~!".indexOf(token.value) >= 0;
+  if (Keyword === token.type) return token.value === "not";
   return false;
 }
 
 // @TODO this needs to be rethought.
 function isCallExpression(expression) {
   switch (expression.type) {
-    case 'CallExpression':
-    case 'TableCallExpression':
-    case 'StringCallExpression':
+    case "CallExpression":
+    case "TableCallExpression":
+    case "StringCallExpression":
       return true;
   }
   return false;
@@ -251,8 +274,10 @@ function isBlockFollow(token) {
   if (EOF === token.type) return true;
   if (Keyword !== token.type) return false;
   switch (token.value) {
-    case 'else': case 'elseif':
-    case 'end': case 'until':
+    case "else":
+    case "elseif":
+    case "end":
+    case "until":
       return true;
     default:
       return false;
@@ -299,14 +324,15 @@ function scopeIdentifier(node) {
 // Attach scope information to node. If the node is global, store it in the
 // globals array so we can return the information to the user.
 function attachScope(node, isLocal) {
-  if (!isLocal && indexOfObject(globals, 'name', node.name) === -1) globals.push(node);
+  if (!isLocal && indexOfObject(globals, "name", node.name) === -1)
+    globals.push(node);
 
   node.isLocal = isLocal;
 }
 
 // Is the identifier name available in this scope.
 function scopeHasName(name) {
-  return (indexOf(scopes[scopeDepth], name) !== -1);
+  return indexOf(scopes[scopeDepth], name) !== -1;
 }
 
 // Location tracking
@@ -399,7 +425,7 @@ function parseBlock(terminator) {
 
   while (!isBlockFollow(token)) {
     // Return has to be the last statement in a block.
-    if (token.value === 'return') {
+    if (token.value === "return") {
       block.push(parseStatement());
       break;
     }
@@ -423,34 +449,72 @@ function parseStatement() {
   markLocation();
   if (Keyword === token.type) {
     switch (token.value) {
-      case 'local': next(); return parseLocalStatement();
-      case 'if': next(); return parseIfStatement();
-      case 'return': next(); return parseReturnStatement();
-      case 'function': next();
+      case "local":
+        next();
+        return parseLocalStatement();
+      case "if":
+        next();
+        return parseIfStatement();
+      case "return":
+        next();
+        return parseReturnStatement();
+      case "function":
+        next();
         var name = parseFunctionName();
         return parseFunctionDeclaration(name);
-      case 'while': next(); return parseWhileStatement();
-      case 'for': next(); return parseForStatement();
-      case 'repeat': next(); return parseRepeatStatement();
-      case 'break': next(); return parseBreakStatement();
-      case 'continue': next(); return parseContinueStatement();
-      case 'do': next(); return parseDoStatement();
-      case 'goto': next(); return parseGotoStatement();
-      case 'public': next(); return parseClassStatement(true);
-      case 'class': next(); return parseClassStatement(false);
-      case 'async': next(); return parseAsyncStatement();
-      case 'throw': next(); return parseThrowStatement();
-      case 'import': next(); parseImportStatement(); return;
+      case "while":
+        next();
+        return parseWhileStatement();
+      case "for":
+        next();
+        return parseForStatement();
+      case "repeat":
+        next();
+        return parseRepeatStatement();
+      case "break":
+        next();
+        return parseBreakStatement();
+      case "continue":
+        next();
+        return parseContinueStatement();
+      case "do":
+        next();
+        return parseDoStatement();
+      case "goto":
+        next();
+        return parseGotoStatement();
+      case "public":
+        next();
+        return parseClassStatement(true);
+      case "class":
+        next();
+        return parseClassStatement(false);
+      case "async":
+        next();
+        return parseAsyncStatement();
+      case "throw":
+        next();
+        return parseThrowStatement();
+      case "import":
+        next();
+        parseImportStatement();
+        return;
       // Shortcuts
-      case 'stopif': next(); return parseStopIfStatement();
-      case 'breakif': next(); return parseBreakIfStatement();
-      case 'continueif': next(); return parseContinueIfStatement();
+      case "stopif":
+        next();
+        return parseStopIfStatement();
+      case "breakif":
+        next();
+        return parseBreakIfStatement();
+      case "continueif":
+        next();
+        return parseContinueIfStatement();
     }
   }
 
   if (Punctuator === token.type) {
-    if (consume('::')) return parseLabelStatement();
-    if (consume('@')) return parseDecoratorStatement();
+    if (consume("::")) return parseLabelStatement();
+    if (consume("@")) return parseDecoratorStatement();
   }
 
   // Assignments memorizes the location and pushes it manually for wrapper
@@ -458,13 +522,13 @@ function parseStatement() {
   if (trackLocations) locations.pop();
 
   // When a `;` is encounted, simply eat it without storing it.
-  if (consume(';')) return;
+  if (consume(";")) return;
 
   return parseAssignmentOrCallStatement();
 }
 
 function parseAsyncStatement(decorators) {
-  expect('function');
+  expect("function");
   const name = parseFunctionName();
   return parseFunctionDeclaration(name, undefined, undefined, true, decorators);
 }
@@ -472,17 +536,17 @@ function parseAsyncStatement(decorators) {
 function parseImportStatement() {
   const identifiers = [];
 
-  if (token.value !== 'end') {
+  if (token.value !== "end") {
     let identifier = parseIdentifier();
     if (identifier != null) identifiers.push(identifier);
-    while (consume(',')) {
+    while (consume(",")) {
       identifier = parseExpectedExpression();
       identifiers.push(identifier);
     }
-    consume(';'); // grammar tells us ; is optional here.
+    consume(";"); // grammar tells us ; is optional here.
   }
 
-  expect('from');
+  expect("from");
 
   const expression = parseExpectedExpression();
   for (const identifier of identifiers) {
@@ -495,14 +559,14 @@ function parseImportStatement() {
 function parseThrowStatement() {
   const expressions = [];
 
-  if (token.value !== 'end') {
+  if (token.value !== "end") {
     let expression = parseExpression();
     if (expression != null) expressions.push(expression);
-    while (consume(',')) {
+    while (consume(",")) {
       expression = parseExpectedExpression();
       expressions.push(expression);
     }
-    consume(';'); // grammar tells us ; is optional here.
+    consume(";"); // grammar tells us ; is optional here.
   }
 
   return finishNode(b.throwStatement(expressions));
@@ -525,7 +589,7 @@ function parseLabelStatement() {
     attachScope(label, true);
   }
 
-  expect('::');
+  expect("::");
   return finishNode(b.labelStatement(label));
 }
 
@@ -535,12 +599,18 @@ function parseDecoratorStatement() {
   const decorator = parseExpectedExpression();
   const decorators = [decorator];
 
-  if (consume('local')) return parseLocalStatement(decorators);
-  if (consume('async')) return parseAsyncStatement(decorators);
+  if (consume("local")) return parseLocalStatement(decorators);
+  if (consume("async")) return parseAsyncStatement(decorators);
 
-  expect('function');
+  expect("function");
   const name = parseFunctionName();
-  return parseFunctionDeclaration(name, undefined, undefined, undefined, decorators);
+  return parseFunctionDeclaration(
+    name,
+    undefined,
+    undefined,
+    undefined,
+    decorators,
+  );
 }
 
 //     break ::= 'break'
@@ -570,7 +640,7 @@ function parseDoStatement() {
   if (options.scope) createScope();
   const body = parseBlock();
   if (options.scope) destroyScope();
-  expect('end');
+  expect("end");
   return finishNode(b.doStatement(body));
 }
 
@@ -578,11 +648,11 @@ function parseDoStatement() {
 
 function parseWhileStatement() {
   const condition = parseExpectedExpression();
-  expect('do');
+  expect("do");
   if (options.scope) createScope();
   const body = parseBlock();
   if (options.scope) destroyScope();
-  expect('end');
+  expect("end");
   return finishNode(b.whileStatement(condition, body));
 }
 
@@ -591,7 +661,7 @@ function parseWhileStatement() {
 function parseRepeatStatement() {
   if (options.scope) createScope();
   const body = parseBlock();
-  expect('until');
+  expect("until");
   const condition = parseExpectedExpression();
   if (options.scope) destroyScope();
   return finishNode(b.repeatStatement(condition, body));
@@ -602,14 +672,14 @@ function parseRepeatStatement() {
 function parseReturnStatement() {
   const expressions = [];
 
-  if (token.value !== 'end') {
+  if (token.value !== "end") {
     let expression = parseExpression();
     if (expression != null) expressions.push(expression);
-    while (consume(',')) {
+    while (consume(",")) {
       expression = parseExpectedExpression();
       expressions.push(expression);
     }
-    consume(';'); // grammar tells us ; is optional here.
+    consume(";"); // grammar tells us ; is optional here.
   }
   return finishNode(b.returnStatement(expressions));
 }
@@ -617,14 +687,14 @@ function parseReturnStatement() {
 function parseStopIfStatement() {
   const expressions = [];
 
-  if (token.value !== 'end') {
+  if (token.value !== "end") {
     let expression = parseExpression();
     if (expression != null) expressions.push(expression);
-    while (consume(',')) {
+    while (consume(",")) {
       expression = parseExpectedExpression();
       expressions.push(expression);
     }
-    consume(';'); // grammar tells us ; is optional here.
+    consume(";"); // grammar tells us ; is optional here.
   }
 
   return finishNode(b.stopIfStatement(expressions));
@@ -633,14 +703,14 @@ function parseStopIfStatement() {
 function parseBreakIfStatement() {
   const expressions = [];
 
-  if (token.value !== 'end') {
+  if (token.value !== "end") {
     let expression = parseExpression();
     if (expression != null) expressions.push(expression);
-    while (consume(',')) {
+    while (consume(",")) {
       expression = parseExpectedExpression();
       expressions.push(expression);
     }
-    consume(';'); // grammar tells us ; is optional here.
+    consume(";"); // grammar tells us ; is optional here.
   }
 
   return finishNode(b.breakIfStatement(expressions));
@@ -649,14 +719,14 @@ function parseBreakIfStatement() {
 function parseContinueIfStatement() {
   const expressions = [];
 
-  if (token.value !== 'end') {
+  if (token.value !== "end") {
     let expression = parseExpression();
     if (expression != null) expressions.push(expression);
-    while (consume(',')) {
+    while (consume(",")) {
       expression = parseExpectedExpression();
       expressions.push(expression);
     }
-    consume(';'); // grammar tells us ; is optional here.
+    consume(";"); // grammar tells us ; is optional here.
   }
 
   return finishNode(b.continueIfStatement(expressions));
@@ -678,17 +748,17 @@ function parseIfStatement() {
     locations.push(marker);
   }
   condition = parseExpectedExpression();
-  expect('then');
+  expect("then");
   if (options.scope) createScope();
   body = parseBlock();
   if (options.scope) destroyScope();
   clauses.push(finishNode(b.ifClause(condition, body)));
 
   if (trackLocations) marker = createLocationMarker();
-  while (consume('elseif')) {
+  while (consume("elseif")) {
     pushLocation(marker);
     condition = parseExpectedExpression();
-    expect('then');
+    expect("then");
     if (options.scope) createScope();
     body = parseBlock();
     if (options.scope) destroyScope();
@@ -696,7 +766,7 @@ function parseIfStatement() {
     if (trackLocations) marker = createLocationMarker();
   }
 
-  if (consume('else')) {
+  if (consume("else")) {
     // Include the `else` in the location of ElseClause.
     if (trackLocations) {
       marker = new Marker(previousToken);
@@ -708,7 +778,7 @@ function parseIfStatement() {
     clauses.push(finishNode(b.elseClause(body)));
   }
 
-  expect('end');
+  expect("end");
   return finishNode(b.ifStatement(clauses));
 }
 
@@ -732,18 +802,18 @@ function parseForStatement() {
 
   // If the first expression is followed by a `=` punctuator, this is a
   // Numeric For Statement.
-  if (consume('=')) {
+  if (consume("=")) {
     // Start expression
     const start = parseExpectedExpression();
-    expect(',');
+    expect(",");
     // End expression
     const end = parseExpectedExpression();
     // Optional step expression
-    const step = consume(',') ? parseExpectedExpression() : null;
+    const step = consume(",") ? parseExpectedExpression() : null;
 
-    expect('do');
+    expect("do");
     body = parseBlock();
-    expect('end');
+    expect("end");
     if (options.scope) destroyScope();
 
     return finishNode(b.forNumericStatement(variable, start, end, step, body));
@@ -752,46 +822,46 @@ function parseForStatement() {
 
   // The namelist can contain one or more identifiers.
   const variables = [variable];
-  while (consume(',')) {
+  while (consume(",")) {
     variable = parseIdentifier();
     // Each variable in the namelist is locally scoped.
     if (options.scope) scopeIdentifier(variable);
     variables.push(variable);
   }
 
-  if (consume('in')) {
+  if (consume("in")) {
     const iterators = [];
 
     // One or more expressions in the explist.
     do {
       var expression = parseExpectedExpression();
       iterators.push(expression);
-    } while (consume(','));
+    } while (consume(","));
 
-    expect('do');
+    expect("do");
     body = parseBlock();
-    expect('end');
+    expect("end");
     if (options.scope) destroyScope();
 
     return finishNode(b.forGenericStatement(variables, iterators, body));
   }
-  if (consume('of')) {
+  if (consume("of")) {
     var expression = parseExpectedExpression();
 
-    expect('do');
+    expect("do");
     body = parseBlock();
-    expect('end');
+    expect("end");
     if (options.scope) destroyScope();
 
     return finishNode(b.forOfStatement(variables, expression, body));
   }
 
-  raiseUnexpectedToken('\'in\' or \'of\'', token);
+  raiseUnexpectedToken("'in' or 'of'", token);
 }
 
 function parseClassStatement(isPublic) {
   if (isPublic) {
-    expect('class');
+    expect("class");
   }
 
   let marker;
@@ -802,7 +872,7 @@ function parseClassStatement(isPublic) {
 
   if (trackLocations) marker = createLocationMarker();
 
-  if (consume('extends')) {
+  if (consume("extends")) {
     parent = parseExpectedExpression();
     currentClassParent = parent;
 
@@ -823,7 +893,7 @@ function parseClassStatement(isPublic) {
     }
   }
 
-  expect('end');
+  expect("end");
 
   currentClassParent = null;
   return finishNode(b.classStatement(identifier, parent, body, isPublic));
@@ -834,33 +904,33 @@ function parseClassBodyStatement() {
   pushLocation(marker);
 
   let visibility;
-  if (consume('private')) {
-    visibility = 'PRIVATE';
+  if (consume("private")) {
+    visibility = "PRIVATE";
   } else {
-    consume('public');
-    visibility = 'PUBLIC';
+    consume("public");
+    visibility = "PUBLIC";
   }
-  const isStatic = consume('static');
-  const get = consume('_get');
-  const set = consume('_set');
+  const isStatic = consume("static");
+  const get = consume("_get");
+  const set = consume("_set");
 
-  if (token.value == 'constructor') classConstructorToken = token;
-  const isAsync = consume('async');
+  if (token.value == "constructor") classConstructorToken = token;
+  const isAsync = consume("async");
   const expression = parseIdentifier();
-  const isConstructor = expression.name === 'constructor';
+  const isConstructor = expression.name === "constructor";
 
   let statement;
 
   if (get || set) {
     statement = b.classGetSetStatement(expression, get, set);
-  } else if (token.value == '=') {
+  } else if (token.value == "=") {
     var marker;
 
     const identifier = expression;
     let exp;
 
     validateVar(expression);
-    expect('=');
+    expect("=");
     exp = parseExpectedExpression();
 
     statement = b.classMemberStatement(identifier, exp, isStatic);
@@ -868,7 +938,13 @@ function parseClassBodyStatement() {
     if (isConstructor) isInClassConstructor = true;
     isInClassMethod = true;
 
-    statement = parseClassMethodStatement(expression, isStatic, isConstructor, isAsync, visibility);
+    statement = parseClassMethodStatement(
+      expression,
+      isStatic,
+      isConstructor,
+      isAsync,
+      visibility,
+    );
 
     isInClassMethod = false;
     isInClassConstructor = false;
@@ -879,17 +955,23 @@ function parseClassBodyStatement() {
   return finishNode(statement);
 }
 
-function parseClassMethodStatement(expression, isStatic, isConstructor, async, visibility) {
+function parseClassMethodStatement(
+  expression,
+  isStatic,
+  isConstructor,
+  async,
+  visibility,
+) {
   let marker;
   const parameters = [];
 
   if (trackLocations) marker = createLocationMarker();
   pushLocation(marker);
 
-  expect('(');
+  expect("(");
 
   // The declaration has arguments
-  if (!consume(')')) {
+  if (!consume(")")) {
     // Arguments are a comma separated list of identifiers, optionally ending
     // with a vararg.
     while (true) {
@@ -898,12 +980,12 @@ function parseClassMethodStatement(expression, isStatic, isConstructor, async, v
         // Function parameters are local.
         if (options.scope) scopeIdentifier(parameter);
 
-        if (consume('=')) {
+        if (consume("=")) {
           var exp = parseExpectedExpression();
 
           parameter.defaultValue = exp;
         }
-        if (consume(':')) {
+        if (consume(":")) {
           var exp = parseExpectedExpression();
 
           parameter.typeCheck = exp;
@@ -911,29 +993,49 @@ function parseClassMethodStatement(expression, isStatic, isConstructor, async, v
 
         parameters.push(parameter);
 
-        if (consume(',')) continue;
-        else if (consume(')')) break;
+        if (consume(",")) continue;
+        else if (consume(")")) break;
       }
       // No arguments are allowed after a vararg.
       else if (VarargLiteral === token.type) {
         parameters.push(parsePrimaryExpression());
-        expect(')');
+        expect(")");
         break;
       } else {
-        raiseUnexpectedToken('<name> or \'...\'', token);
+        raiseUnexpectedToken("<name> or '...'", token);
       }
     }
   }
 
   const body = parseBlock();
-  expect('end');
+  expect("end");
   if (options.scope) destroyScope();
 
   if (isConstructor) {
-    return finishNode(b.classMethodStatement(expression, 'constructor', parameters, body, false, async, visibility));
+    return finishNode(
+      b.classMethodStatement(
+        expression,
+        "constructor",
+        parameters,
+        body,
+        false,
+        async,
+        visibility,
+      ),
+    );
   }
 
-  return finishNode(b.classMethodStatement(expression, 'method', parameters, body, isStatic, async, visibility));
+  return finishNode(
+    b.classMethodStatement(
+      expression,
+      "method",
+      parameters,
+      body,
+      isStatic,
+      async,
+      visibility,
+    ),
+  );
 }
 
 // Local statements can either be variable assignments or function
@@ -949,19 +1051,19 @@ function parseClassMethodStatement(expression, isStatic, isConstructor, async, v
 function parseLocalStatement(decorators) {
   let name;
 
-  if (Identifier === token.type || token.value == '{') {
+  if (Identifier === token.type || token.value == "{") {
     const variables = [];
 
     // Check for table destructor
-    if (consume('{')) {
+    if (consume("{")) {
       do {
         name = parseIdentifier();
 
         variables.push(name);
-      } while (consume(','));
+      } while (consume(","));
 
-      expect('}');
-      expect('=');
+      expect("}");
+      expect("=");
 
       var expression = parseExpectedExpression();
 
@@ -982,13 +1084,13 @@ function parseLocalStatement(decorators) {
       name = parseIdentifier();
 
       variables.push(name);
-    } while (consume(','));
+    } while (consume(","));
 
-    if (consume('=')) {
+    if (consume("=")) {
       do {
         var expression = parseExpectedExpression();
         init.push(expression);
-      } while (consume(','));
+      } while (consume(","));
     }
 
     // Declarations doesn't exist before the statement has been evaluated.
@@ -1002,7 +1104,7 @@ function parseLocalStatement(decorators) {
 
     return finishNode(b.localStatement(variables, init));
   }
-  if (consume('async')) {
+  if (consume("async")) {
     next();
 
     name = parseIdentifier();
@@ -1014,7 +1116,7 @@ function parseLocalStatement(decorators) {
     // MemberExpressions are not allowed in local function statements.
     return parseFunctionDeclaration(name, true, undefined, true, decorators);
   }
-  if (consume('function')) {
+  if (consume("function")) {
     name = parseIdentifier();
 
     if (options.scope) {
@@ -1023,14 +1125,24 @@ function parseLocalStatement(decorators) {
     }
 
     // MemberExpressions are not allowed in local function statements.
-    return parseFunctionDeclaration(name, true, undefined, undefined, decorators);
+    return parseFunctionDeclaration(
+      name,
+      true,
+      undefined,
+      undefined,
+      decorators,
+    );
   }
-  raiseUnexpectedToken('<name>', token);
+  raiseUnexpectedToken("<name>", token);
 }
 
 function validateVar(node) {
   // @TODO we need something not dependent on the exact AST used. see also isCallExpression()
-  if (node.inParens || (['Identifier', 'MemberExpression', 'IndexExpression'].indexOf(node.type) === -1)) {
+  if (
+    node.inParens ||
+    ["Identifier", "MemberExpression", "IndexExpression"].indexOf(node.type) ===
+      -1
+  ) {
     raise(token, errors.invalidVar, token.value);
   }
 }
@@ -1054,36 +1166,38 @@ function parseAssignmentOrCallStatement() {
   expression = parsePrefixExpression();
 
   if (expression == null) return unexpected(token);
-  if (token.value == '++') {
+  if (token.value == "++") {
     validateVar(expression);
 
     next();
     pushLocation(marker);
-    return finishNode(b.mutationStatement(expression, '+', b.literal(NumericLiteral, 1, '1')));
+    return finishNode(
+      b.mutationStatement(expression, "+", b.literal(NumericLiteral, 1, "1")),
+    );
   }
-  if (',='.indexOf(token.value) >= 0) {
+  if (",=".indexOf(token.value) >= 0) {
     const variables = [expression];
     const init = [];
     var exp;
 
     validateVar(expression);
-    while (consume(',')) {
+    while (consume(",")) {
       exp = parsePrefixExpression();
-      if (exp == null) raiseUnexpectedToken('<expression>', token);
+      if (exp == null) raiseUnexpectedToken("<expression>", token);
       validateVar(exp);
       variables.push(exp);
     }
-    expect('=');
+    expect("=");
     do {
       exp = parseExpectedExpression();
       init.push(exp);
-    } while (consume(','));
+    } while (consume(","));
 
     pushLocation(marker);
     return finishNode(b.assignmentStatement(variables, init));
   }
 
-  if ('+=-=*=/=%=||=..=??='.indexOf(token.value) >= 0) {
+  if ("+=-=*=/=%=||=..=??=".indexOf(token.value) >= 0) {
     const sign = token.value.substring(0, token.value.length - 1);
     validateVar(expression);
 
@@ -1098,7 +1212,7 @@ function parseAssignmentOrCallStatement() {
     pushLocation(marker);
     return finishNode(b.callStatement(expression));
   }
-  if (expression.type == 'TableDestructorStatement') {
+  if (expression.type == "TableDestructorStatement") {
     return expression;
   }
   // The prefix expression was neither part of an assignment or a
@@ -1114,13 +1228,13 @@ function parseAssignmentOrCallStatement() {
 function parseIdentifier() {
   markLocation();
   const identifier = token.value;
-  if (Identifier !== token.type) raiseUnexpectedToken('<name>', token);
+  if (Identifier !== token.type) raiseUnexpectedToken("<name>", token);
 
   next();
 
   if (imports.has(identifier)) {
     const expression = imports.get(identifier);
-    const node = b.memberExpression(expression, '.', b.identifier(identifier));
+    const node = b.memberExpression(expression, ".", b.identifier(identifier));
 
     return finishNode(node);
   }
@@ -1132,8 +1246,8 @@ function parseSuperExpression() {
   markLocation();
   next();
 
-  if ('.()'.indexOf(token.value) == -1) {
-    raiseUnexpectedToken('<name>', token);
+  if (".()".indexOf(token.value) == -1) {
+    raiseUnexpectedToken("<name>", token);
   }
 
   return finishNode(b.superExpression());
@@ -1156,12 +1270,18 @@ function parseSelfExpression() {
 //     funcdecl ::= '(' [parlist] ')' block 'end'
 //     parlist ::= Name {',' Name} | [',' '...'] | '...'
 
-function parseFunctionDeclaration(name, isLocal, isExpression, isAsync, decorators) {
+function parseFunctionDeclaration(
+  name,
+  isLocal,
+  isExpression,
+  isAsync,
+  decorators,
+) {
   const parameters = [];
-  expect('(');
+  expect("(");
 
   // The declaration has arguments
-  if (!consume(')')) {
+  if (!consume(")")) {
     // Arguments are a comma separated list of identifiers, optionally ending
     // with a vararg.
     while (true) {
@@ -1170,12 +1290,12 @@ function parseFunctionDeclaration(name, isLocal, isExpression, isAsync, decorato
         // Function parameters are local.
         if (options.scope) scopeIdentifier(parameter);
 
-        if (consume('=')) {
+        if (consume("=")) {
           var exp = parseExpectedExpression();
 
           parameter.defaultValue = exp;
         }
-        if (consume(':')) {
+        if (consume(":")) {
           var exp = parseExpectedExpression();
 
           parameter.typeCheck = exp;
@@ -1183,38 +1303,38 @@ function parseFunctionDeclaration(name, isLocal, isExpression, isAsync, decorato
 
         parameters.push(parameter);
 
-        if (consume(',')) continue;
-        else if (consume(')')) break;
+        if (consume(",")) continue;
+        else if (consume(")")) break;
       }
       // Self variabels cannot have default variables
-      else if (Keyword === token.type && token.value === 'self') {
+      else if (Keyword === token.type && token.value === "self") {
         var parameter = parseSelfExpression();
         // Function parameters are local
         if (options.scope) scopeIdentifier(parameter);
 
         parameters.push(parameter);
 
-        if (consume(',')) continue;
-        else if (consume(')')) break;
+        if (consume(",")) continue;
+        else if (consume(")")) break;
       }
       // No arguments are allowed after a vararg.
       else if (VarargLiteral === token.type) {
         const temp = lookahead;
         const param = parsePrimaryExpression();
-        if (param.type == 'SpreadExpression') {
+        if (param.type == "SpreadExpression") {
           unexpected(temp);
         }
         parameters.push(param);
-        expect(')');
+        expect(")");
         break;
       } else {
-        raiseUnexpectedToken('<name> or \'...\'', token);
+        raiseUnexpectedToken("<name> or '...'", token);
       }
     }
   }
 
   const body = parseBlock();
-  expect('end');
+  expect("end");
   if (options.scope) destroyScope();
 
   isLocal = isLocal || false;
@@ -1238,8 +1358,9 @@ function parseFunctionDeclaration(name, isLocal, isExpression, isAsync, decorato
 //     Name {'.' Name} [':' Name]
 
 function parseFunctionName() {
-  let base; let name; let
-    marker;
+  let base;
+  let name;
+  let marker;
 
   if (trackLocations) marker = createLocationMarker();
   base = parseIdentifier();
@@ -1249,17 +1370,17 @@ function parseFunctionName() {
     createScope();
   }
 
-  while (consume('.')) {
+  while (consume(".")) {
     pushLocation(marker);
     name = parseIdentifier();
-    base = finishNode(b.memberExpression(base, '.', name));
+    base = finishNode(b.memberExpression(base, ".", name));
   }
 
-  if (consume(':')) {
+  if (consume(":")) {
     pushLocation(marker);
     name = parseIdentifier();
-    base = finishNode(b.memberExpression(base, ':', name));
-    if (options.scope) scopeIdentifierName('self');
+    base = finishNode(b.memberExpression(base, ":", name));
+    if (options.scope) scopeIdentifierName("self");
   }
 
   return base;
@@ -1278,14 +1399,14 @@ function parseTableConstructor() {
 
   while (true) {
     markLocation();
-    if (Punctuator === token.type && consume('[')) {
+    if (Punctuator === token.type && consume("[")) {
       key = parseExpectedExpression();
-      expect(']');
-      expect('=');
+      expect("]");
+      expect("=");
       value = parseExpectedExpression();
       fields.push(finishNode(b.tableKey(key, value)));
     } else if (Identifier === token.type) {
-      if (lookahead.value === '=') {
+      if (lookahead.value === "=") {
         key = parseIdentifier();
         next();
         value = parseExpectedExpression();
@@ -1299,19 +1420,19 @@ function parseTableConstructor() {
         locations.pop();
         break;
       }
-      if (value.type == 'SpreadExpression') {
+      if (value.type == "SpreadExpression") {
         fields.push(finishNode(b.tableSpreadExpression(value.expression)));
       } else {
         fields.push(finishNode(b.tableValue(value)));
       }
     }
-    if (',;'.indexOf(token.value) >= 0) {
+    if (",;".indexOf(token.value) >= 0) {
       next();
       continue;
     }
     break;
   }
-  expect('}');
+  expect("}");
   return finishNode(b.tableConstructorExpression(fields));
 }
 
@@ -1339,7 +1460,7 @@ function parseExpression() {
 
 function parseExpectedExpression() {
   const expression = parseExpression();
-  if (expression == null) raiseUnexpectedToken('<expression>', token);
+  if (expression == null) raiseUnexpectedToken("<expression>", token);
   else return expression;
 }
 
@@ -1357,28 +1478,49 @@ function binaryPrecedence(operator) {
 
   if (length === 1) {
     switch (charCode) {
-      case 94: return 12; // ^
-      case 42: case 47: case 37: return 10; // * / %
-      case 43: case 45: return 9; // + -
-      case 38: return 6; // &
-      case 126: return 5; // ~
-      case 124: return 4; // |
-      case 60: case 62: return 3; // < >
+      case 94:
+        return 12; // ^
+      case 42:
+      case 47:
+      case 37:
+        return 10; // * / %
+      case 43:
+      case 45:
+        return 9; // + -
+      case 38:
+        return 6; // &
+      case 126:
+        return 5; // ~
+      case 124:
+        return 4; // |
+      case 60:
+      case 62:
+        return 3; // < >
     }
   } else if (length === 2) {
     switch (charCode) {
-      case 47: return 10; // //
-      case 46: return 8; // ..
-      case 60: case 62:
-        if (operator === '<<' || operator === '>>') return 7; // << >>
+      case 47:
+        return 10; // //
+      case 46:
+        return 8; // ..
+      case 60:
+      case 62:
+        if (operator === "<<" || operator === ">>") return 7; // << >>
         return 3; // <= >=
-      case 61: case 126: case 33: return 3; // == ~=
-      case 111: return 1; // or
-      case 124: return 1; // ||
-      case 38: return 1; // &&
-      case 63: return 6; // ??
+      case 61:
+      case 126:
+      case 33:
+        return 3; // == ~=
+      case 111:
+        return 1; // or
+      case 124:
+        return 1; // ||
+      case 38:
+        return 1; // &&
+      case 63:
+        return 6; // ??
     }
-  } else if (charCode === 97 && operator === 'and') return 2;
+  } else if (charCode === 97 && operator === "and") return 2;
   return 0;
 }
 
@@ -1404,7 +1546,7 @@ function parseSubExpression(minPrecedence) {
     markLocation();
     next();
     const argument = parseSubExpression(10);
-    if (argument == null) raiseUnexpectedToken('<expression>', token);
+    if (argument == null) raiseUnexpectedToken("<expression>", token);
     expression = finishNode(b.unaryExpression(operator, argument));
   }
 
@@ -1424,16 +1566,18 @@ function parseSubExpression(minPrecedence) {
   while (true) {
     operator = token.value;
 
-    precedence = (Punctuator === token.type || Keyword === token.type)
-      ? binaryPrecedence(operator) : 0;
+    precedence =
+      Punctuator === token.type || Keyword === token.type
+        ? binaryPrecedence(operator)
+        : 0;
 
     if (precedence === 0 || precedence <= minPrecedence) break;
     // Right-hand precedence operators
-    if (operator === '^' || operator === '..') precedence--;
+    if (operator === "^" || operator === "..") precedence--;
     next();
 
     const right = parseSubExpression(precedence);
-    if (right == null) raiseUnexpectedToken('<expression>', token);
+    if (right == null) raiseUnexpectedToken("<expression>", token);
     // Push in the marker created before the loop to wrap its entirety.
     if (trackLocations) locations.push(marker);
     expression = finishNode(b.binaryExpression(operator, expression, right));
@@ -1443,24 +1587,24 @@ function parseSubExpression(minPrecedence) {
 }
 
 function parseFatArrowFunction(params) {
-  if (consume('=>')) {
+  if (consume("=>")) {
     if (options.scope) createScope();
     const body = parseBlock();
     if (options.scope) destroyScope();
 
-    expect('end');
+    expect("end");
     return b.fatArrowExpression(params, body);
   }
 }
 
 function parseThinArrowFunction(params) {
-  if (consume('->')) {
+  if (consume("->")) {
     if (options.scope) createScope();
     const body = parseBlock();
     if (options.scope) destroyScope();
 
-    expect('end');
-    return b.thinArrowExpression([b.identifier('self')].concat(params), body);
+    expect("end");
+    return b.thinArrowExpression([b.identifier("self")].concat(params), body);
   }
 }
 
@@ -1471,8 +1615,9 @@ function parseThinArrowFunction(params) {
 //     args ::= '(' [explist] ')' | tableconstructor | String
 
 function parsePrefixExpression() {
-  let base; let name; let
-    marker;
+  let base;
+  let name;
+  let marker;
 
   if (trackLocations) marker = createLocationMarker();
 
@@ -1483,25 +1628,25 @@ function parsePrefixExpression() {
     // Set the parent scope.
     if (options.scope) attachScope(base, scopeHasName(name));
   } else if (Keyword == token.type) {
-    if (token.value == 'super') {
+    if (token.value == "super") {
       name = token.value;
       base = parseSuperExpression();
       // Set the parent scope.
       if (options.scope) attachScope(base, scopeHasName(name));
-    } else if (token.value == 'self') {
+    } else if (token.value == "self") {
       name = token.value;
       base = parseSelfExpression();
       // Set the parent scope.
       if (options.scope) attachScope(base, scopeHasName(name));
     }
-  } else if (consume('(')) {
-    if (Identifier == token.type || '...)'.indexOf(token.value) >= 0) {
+  } else if (consume("(")) {
+    if (Identifier == token.type || "...)".indexOf(token.value) >= 0) {
       const parameters = [];
       const tokens = [];
       const commaTokens = [];
 
       // The declaration has arguments
-      if (!consume(')')) {
+      if (!consume(")")) {
         // Arguments are a comma separated list of identifiers, optionally ending
         // with a vararg.
 
@@ -1511,7 +1656,7 @@ function parsePrefixExpression() {
             tokens.push(token);
 
             const param = parsePrimaryExpression();
-            if (param.type == 'SpreadExpression') {
+            if (param.type == "SpreadExpression") {
               unexpected(temp);
             }
             parameters.push(param);
@@ -1519,11 +1664,11 @@ function parsePrefixExpression() {
           } else {
             tokens.push(token);
             const parameter = parseExpectedExpression();
-            if (consume('=')) {
+            if (consume("=")) {
               var exp = parseExpectedExpression();
               parameter.defaultValue = exp;
             }
-            if (consume(':')) {
+            if (consume(":")) {
               var exp = parseExpectedExpression();
 
               parameter.typeCheck = exp;
@@ -1532,12 +1677,12 @@ function parsePrefixExpression() {
             parameters.push(parameter);
           }
 
-          if (token.value === ',') {
+          if (token.value === ",") {
             commaTokens.push(token);
           }
-        } while (consume(','));
+        } while (consume(","));
 
-        expect(')');
+        expect(")");
       }
 
       const fatArrowExpression = parseFatArrowFunction(parameters);
@@ -1547,12 +1692,13 @@ function parsePrefixExpression() {
 
         for (const i in tokens) {
           const t = tokens[i];
-          if (t.type != Identifier && t.type != VarargLiteral) raiseUnexpectedToken('<name> or \'...\'', t);
+          if (t.type != Identifier && t.type != VarargLiteral)
+            raiseUnexpectedToken("<name> or '...'", t);
         }
         return finishNode(fatArrowExpression || thinArrowExpression);
       }
       if (commaTokens.length > 0) {
-        raiseUnexpectedToken('\')\'', commaTokens[0]);
+        raiseUnexpectedToken("')'", commaTokens[0]);
       }
 
       base = parameters[0];
@@ -1568,7 +1714,7 @@ function parsePrefixExpression() {
       return finishNode(b.fatArrowExpression(parameters, body)); */
     } else {
       base = parseExpectedExpression();
-      expect(')');
+      expect(")");
       base.inParens = true; // XXX: quick and dirty. needed for validateVar
     }
   } else {
@@ -1576,54 +1722,55 @@ function parsePrefixExpression() {
   }
 
   // The suffix
-  let expression; let
-    identifier;
+  let expression;
+  let identifier;
   while (true) {
     if (Punctuator === token.type) {
       switch (token.value) {
-        case '[':
+        case "[":
           pushLocation(marker);
           next();
           expression = parseExpectedExpression();
           base = finishNode(b.indexExpression(base, expression));
-          expect(']');
+          expect("]");
           break;
-        case '?.':
+        case "?.":
           pushLocation(marker);
           next();
           identifier = parseIdentifier();
-          base = finishNode(b.safeMemberExpression(base, '.', identifier));
+          base = finishNode(b.safeMemberExpression(base, ".", identifier));
           break;
-        case '?:':
+        case "?:":
           pushLocation(marker);
           next();
           expression = parseExpectedExpression();
-          base = finishNode(b.safeMemberExpression(base, '.', expression));
+          base = finishNode(b.safeMemberExpression(base, ".", expression));
           break;
-        case '?[':
+        case "?[":
           pushLocation(marker);
           next();
           expression = parseExpectedExpression();
-          base = finishNode(b.safeMemberExpression(base, '.', expression));
-          expect(']');
+          base = finishNode(b.safeMemberExpression(base, ".", expression));
+          expect("]");
           break;
-        case '.':
+        case ".":
           pushLocation(marker);
           next();
           identifier = parseIdentifier();
-          base = finishNode(b.memberExpression(base, '.', identifier));
+          base = finishNode(b.memberExpression(base, ".", identifier));
           break;
-        case ':':
+        case ":":
           pushLocation(marker);
           next();
           identifier = parseIdentifier();
-          base = finishNode(b.memberExpression(base, ':', identifier));
+          base = finishNode(b.memberExpression(base, ":", identifier));
           // Once a : is found, this has to be a CallExpression, otherwise
           // throw an error.
           pushLocation(marker);
           base = parseCallExpression(base);
           break;
-        case '(': case '{': // args
+        case "(":
+        case "{": // args
           pushLocation(marker);
           base = parseCallExpression(base);
           break;
@@ -1646,7 +1793,7 @@ function parsePrefixExpression() {
 function parseCallExpression(base) {
   let first = base;
 
-  if (first.type == 'MemberExpression') {
+  if (first.type == "MemberExpression") {
     while (first) {
       if (!first.base) break;
       first = first.base;
@@ -1655,23 +1802,23 @@ function parseCallExpression(base) {
 
   if (Punctuator === token.type) {
     switch (token.value) {
-      case '(':
+      case "(":
         next();
 
         // List of expressions
         var expressions = [];
         var expression = parseExpression();
         if (expression != null) expressions.push(expression);
-        while (consume(',')) {
+        while (consume(",")) {
           expression = parseExpectedExpression();
           expressions.push(expression);
         }
 
-        expect(')');
+        expect(")");
 
         return finishNode(b.callExpression(base, expressions));
 
-      case '{':
+      case "{":
         markLocation();
         next();
         var table = parseTableConstructor();
@@ -1682,7 +1829,7 @@ function parseCallExpression(base) {
     return finishNode(b.stringCallExpression(base, parsePrimaryExpression()));
   }
 
-  raiseUnexpectedToken('function arguments', token);
+  raiseUnexpectedToken("function arguments", token);
 }
 
 //     primary ::= String | Numeric | nil | true | false
@@ -1697,7 +1844,13 @@ function parsePrimaryExpression() {
 
   if (trackLocations) marker = createLocationMarker();
 
-  if (type == StringLiteral || type == NumericLiteral || type == BooleanLiteral || type == NilLiteral || type == VarargLiteral) {
+  if (
+    type == StringLiteral ||
+    type == NumericLiteral ||
+    type == BooleanLiteral ||
+    type == NilLiteral ||
+    type == VarargLiteral
+  ) {
     pushLocation(marker);
     const raw = input.slice(token.range[0], token.range[1]);
     next();
@@ -1710,13 +1863,15 @@ function parsePrimaryExpression() {
 
         const expressions = [];
         let lastIdx = 0;
-        while (match = regexTemplate.exec(value)) {
+        while ((match = regexTemplate.exec(value))) {
           const matchStr = match[0];
 
           var str = value.substring(lastIdx, match.index);
           const str2 = value.substring(lastIdx, match.index);
-          if (str != '') {
-            expressions.push(b.literal(StringLiteral, str, JSON.stringify(str)));
+          if (str != "") {
+            expressions.push(
+              b.literal(StringLiteral, str, JSON.stringify(str)),
+            );
           }
           lastIdx = match.index + matchStr.length;
 
@@ -1724,7 +1879,7 @@ function parsePrimaryExpression() {
         }
 
         var str = value.slice(lastIdx);
-        if (str != '') {
+        if (str != "") {
           expressions.push(b.literal(StringLiteral, str, JSON.stringify(str)));
         }
 
@@ -1737,14 +1892,16 @@ function parsePrimaryExpression() {
     }
 
     return finishNode(b.literal(type, value, raw));
-  } if (Keyword === type && value === 'function') {
+  }
+  if (Keyword === type && value === "function") {
     pushLocation(marker);
     next();
     if (options.scope) createScope();
     return parseFunctionDeclaration(null, null, true);
-  } if (Keyword == type && value == 'await') {
+  }
+  if (Keyword == type && value == "await") {
     if (scopeDepth == 1) {
-      raise(token, 'Unable to use await in a global scope!');
+      raise(token, "Unable to use await in a global scope!");
     }
 
     pushLocation(marker);
@@ -1752,12 +1909,12 @@ function parsePrimaryExpression() {
 
     var exp = parseExpression();
     return finishNode(b.awaitStatement(exp));
-  } if (consume('{')) {
+  }
+  if (consume("{")) {
     pushLocation(marker);
     return parseTableConstructor();
   }
-  if (token.value == '(') {
-
+  if (token.value == "(") {
   }
 }
 
@@ -1779,13 +1936,13 @@ function parsePrimaryExpression() {
 //     is destroyed.
 
 function parse(_input, _options) {
-  if (typeof _options === 'undefined' && typeof _input === 'object') {
+  if (typeof _options === "undefined" && typeof _input === "object") {
     _options = _input;
     _input = undefined;
   }
   if (!_options) _options = {};
 
-  input = _input || '';
+  input = _input || "";
   options = extend(defaultOptions, _options);
 
   // Rewind the lexer
@@ -1832,12 +1989,12 @@ function write(_input) {
 // Send an EOF and begin parsing.
 
 function end(_input) {
-  if (typeof _input !== 'undefined') write(_input);
+  if (typeof _input !== "undefined") write(_input);
 
   // Ignore shebangs.
 
-  if (input && input.substr(0, 2) === '#!') {
-    input = input.replace(/^.*/, (line) => line.replace(/./g, ' '));
+  if (input && input.substr(0, 2) === "#!") {
+    input = input.replace(/^.*/, (line) => line.replace(/./g, " "));
   }
 
   length = input.length;
@@ -1848,7 +2005,10 @@ function end(_input) {
   const file = parseFile();
   if (options.scope) file.globals = globals;
 
-  if (locations.length > 0) throw new Error('Location tracking failed. This is most likely a bug in the parser');
+  if (locations.length > 0)
+    throw new Error(
+      "Location tracking failed. This is most likely a bug in the parser",
+    );
 
   return file;
 }
@@ -1856,7 +2016,7 @@ function end(_input) {
 /* vim: set sw=2 ts=2 et tw=79 : */
 
 const parser = {
-  version: '0.2.1',
+  version: "0.2.1",
   defaultOptions,
   errors,
   parse,

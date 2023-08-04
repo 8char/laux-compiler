@@ -1,12 +1,12 @@
-import includes from 'lodash/includes';
-import repeat from 'lodash/repeat';
-import defaults from 'lodash/defaults';
+import includes from "lodash/includes";
+import repeat from "lodash/repeat";
+import defaults from "lodash/defaults";
 // import Renamer from './lib/renamer';
 // import NodePath from '../path';
-import traverse from '../visitor';
-import Binding from './binding';
-import * as t from '../types';
-import { scope as scopeCache } from '../cache';
+import traverse from "../visitor";
+import Binding from "./binding";
+import * as t from "../types";
+import { scope as scopeCache } from "../cache";
 
 // let crawlCallsCount = 0;
 
@@ -58,25 +58,25 @@ const collectorVisitor = {
   },
 
   ForOfStatement(path, state) {
-    const variables = path.get('variables');
+    const variables = path.get("variables");
     variables.forEach((variable) => {
-      path.scope.getBlockParent().registerBinding('var', variable);
+      path.scope.getBlockParent().registerBinding("var", variable);
       state.constantViolations.push(variable);
     });
   },
 
   ForGenericStatement(path, state) {
-    const variables = path.get('variables');
+    const variables = path.get("variables");
     variables.forEach((variable) => {
-      path.scope.getBlockParent().registerBinding('var', variable);
+      path.scope.getBlockParent().registerBinding("var", variable);
       state.constantViolations.push(variable);
     });
   },
 
   ForNumericStatement(path, state) {
-    const variable = path.get('variable');
+    const variable = path.get("variable");
     if (variable) {
-      path.scope.getBlockParent().registerBinding('var', variable);
+      path.scope.getBlockParent().registerBinding("var", variable);
       state.constantViolations.push(variable);
     }
   },
@@ -97,7 +97,7 @@ const collectorVisitor = {
   },
 
   MutationStatement(path, state) {
-    state.constantViolations.push(path.get('expression'));
+    state.constantViolations.push(path.get("expression"));
   },
 
   AssignmentStatement(path, state) {
@@ -137,18 +137,21 @@ export default class Scope {
     traverse(node, visitors, state, this, this.path);
   }
 
-  generateDeclaredUidIdentifier(name = 'temp') {
+  generateDeclaredUidIdentifier(name = "temp") {
     const id = this.generateUidIdentifier(name);
     this.push({ id });
     return id;
   }
 
-  generateUidIdentifier(name = 'temp') {
+  generateUidIdentifier(name = "temp") {
     return t.identifier(this.generateUid(name));
   }
 
-  generateUid(name = 'temp') {
-    name = t.toIdentifier(name).replace(/^_+/, '').replace(/[0-9]+$/g, '');
+  generateUid(name = "temp") {
+    name = t
+      .toIdentifier(name)
+      .replace(/^_+/, "")
+      .replace(/[0-9]+$/g, "");
 
     let uid;
     let i = 0;
@@ -156,10 +159,10 @@ export default class Scope {
       uid = this._generateUid(name, i);
       i += 1;
     } while (
-      this.hasLabel(uid)
-      || this.hasBinding(uid)
-      || this.hasGlobal(uid)
-      || this.hasReference(uid)
+      this.hasLabel(uid) ||
+      this.hasBinding(uid) ||
+      this.hasGlobal(uid) ||
+      this.hasReference(uid)
     );
 
     const chunk = this.getChunkParent();
@@ -181,8 +184,8 @@ export default class Scope {
     const parts = [];
     gatherNodeParts(node, parts);
 
-    let id = parts.join('$');
-    id = id.replace(/^_/, '') || defaultName || 'ref';
+    let id = parts.join("$");
+    id = id.replace(/^_/, "") || defaultName || "ref";
 
     return this.generateUidIdentifier(id.slice(0, 20));
   }
@@ -219,22 +222,22 @@ export default class Scope {
   }
 
   dump() {
-    const sep = repeat('-', 60);
+    const sep = repeat("-", 60);
 
     console.log(sep);
     let scope = this;
     do {
-      console.log('#', scope.block.type);
+      console.log("#", scope.block.type);
       for (const name in scope.bindings) {
         const binding = scope.bindings[name];
-        console.log(' -', name, {
+        console.log(" -", name, {
           constant: binding.constant,
           references: binding.references,
           violations: binding.constantViolations.length,
           kind: binding.kind,
         });
       }
-    } while (scope = scope.parent);
+    } while ((scope = scope.parent));
     console.log(sep);
   }
 
@@ -243,13 +246,14 @@ export default class Scope {
 
     if (t.isIdentifier(node)) {
       const binding = this.getBinding(node.name);
-      if (binding && binding.constant && binding.path.isGenericType('Array')) return node;
+      if (binding && binding.constant && binding.path.isGenericType("Array"))
+        return node;
     }
 
-    let helperName = 'toArray';
+    let helperName = "toArray";
     const args = [node];
     if (i === true) {
-      helperName = 'toConsumableArray';
+      helperName = "toConsumableArray";
     }
 
     // TODO: finish
@@ -269,20 +273,19 @@ export default class Scope {
 
   registerDeclaration(path) {
     if (path.isLocalStatement()) {
-      const variables = path.get('variables');
+      const variables = path.get("variables");
 
       for (const variable of variables) {
-        this.registerBinding('var', variable);
+        this.registerBinding("var", variable);
       }
     } else if (path.isClassStatement()) {
-      this.registerBinding('var', path);
+      this.registerBinding("var", path);
     } else {
-      this.registerBinding('unknown', path);
+      this.registerBinding("unknown", path);
     }
   }
 
-  buildUndefinedNode() {
-  }
+  buildUndefinedNode() {}
 
   registerConstantViolation(path) {
     const ids = path.getBindingIdentifiers();
@@ -293,7 +296,7 @@ export default class Scope {
   }
 
   registerBinding(kind, path, bindingPath) {
-    if (!kind) throw new ReferenceError('no `kind`');
+    if (!kind) throw new ReferenceError("no `kind`");
 
     // TODO: Register variable declarations
     /*
@@ -335,7 +338,7 @@ export default class Scope {
 
     do {
       if (scope.uids[name]) return true;
-    } while (scope = scope.parent);
+    } while ((scope = scope.parent));
 
     return false;
   }
@@ -345,7 +348,7 @@ export default class Scope {
 
     do {
       if (scope.globals[name]) return true;
-    } while (scope = scope.parent);
+    } while ((scope = scope.parent));
 
     return false;
   }
@@ -355,7 +358,7 @@ export default class Scope {
 
     do {
       if (scope.references[name]) return true;
-    } while (scope = scope.parent);
+    } while ((scope = scope.parent));
 
     return false;
   }
@@ -371,7 +374,7 @@ export default class Scope {
   }
 
   setData(key, val) {
-    return this.data[key] = val;
+    return (this.data[key] = val);
   }
 
   getData(key) {
@@ -379,8 +382,7 @@ export default class Scope {
     do {
       const data = scope.data[key];
       if (data != null) return data;
-    }
-    while (scope = scope.parent);
+    } while ((scope = scope.parent));
   }
 
   removeData(key) {
@@ -388,8 +390,7 @@ export default class Scope {
     do {
       const data = scope.data[key];
       if (data != null) scope.data[key] = null;
-    }
-    while (scope = scope.parent);
+    } while ((scope = scope.parent));
   }
 
   init() {
@@ -418,9 +419,9 @@ export default class Scope {
     // TODO: Register class
 
     if (path.isFunction()) {
-      const params = path.get('parameters');
+      const params = path.get("parameters");
       for (const param of params) {
-        this.registerBinding('param', param);
+        this.registerBinding("param", param);
       }
     }
 
@@ -485,10 +486,9 @@ export default class Scope {
       if (scope.path.isChunk()) {
         return scope;
       }
-    }
-    while (scope = scope.parent);
+    } while ((scope = scope.parent));
 
-    throw new Error('We couldn\'t find a Function or Chunk...');
+    throw new Error("We couldn't find a Function or Chunk...");
   }
 
   getFunctionParent() {
@@ -497,8 +497,8 @@ export default class Scope {
       if (scope.path.isFunctionParent()) {
         return scope;
       }
-    } while (scope = scope.parent);
-    throw new Error('We couldn\'t find a Function or Chunk...');
+    } while ((scope = scope.parent));
+    throw new Error("We couldn't find a Function or Chunk...");
   }
 
   getBlockParent() {
@@ -507,8 +507,10 @@ export default class Scope {
       if (scope.path.isBlockStatement()) {
         return scope;
       }
-    } while (scope = scope.parent);
-    throw new Error("We couldn't find a BlockStatement, For, Switch, Function, Loop or Program...");
+    } while ((scope = scope.parent));
+    throw new Error(
+      "We couldn't find a BlockStatement, For, Switch, Function, Loop or Program...",
+    );
   }
 
   getAllBindings() {
@@ -518,8 +520,7 @@ export default class Scope {
     do {
       defaults(ids, scope.bindings);
       scope = scope.parent;
-    }
-    while (scope);
+    } while (scope);
 
     return ids;
   }
@@ -535,8 +536,7 @@ export default class Scope {
           if (binding.kind === kind) ids[name] = binding;
         }
         scope = scope.parent;
-      }
-      while (scope);
+      } while (scope);
     }
 
     return ids;
@@ -552,8 +552,7 @@ export default class Scope {
     do {
       const binding = scope.getOwnBinding(name);
       if (binding) return binding;
-    }
-    while (scope = scope.parent);
+    } while ((scope = scope.parent));
   }
 
   getOwnBinding(name) {
@@ -612,7 +611,6 @@ export default class Scope {
       if (scope.uids[name]) {
         scope.uids[name] = false;
       }
-    }
-    while (scope = scope.parent);
+    } while ((scope = scope.parent));
   }
 }

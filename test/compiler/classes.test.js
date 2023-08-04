@@ -1,8 +1,8 @@
-import chai from 'chai';
-import chaiSubset from 'chai-subset';
-import compiler from '../../src/compiler';
-import parser from '../../src/parser';
-import CodeGenerator from '../../src/codegenerator';
+import chai from "chai";
+import chaiSubset from "chai-subset";
+import compiler from "../../src/compiler";
+import parser from "../../src/parser";
+import CodeGenerator from "../../src/codegenerator";
 
 chai.use(chaiSubset);
 
@@ -13,8 +13,7 @@ function parseCode(code) {
   const compiledAST = compiler.compile(JSON.parse(JSON.stringify(ast)), {
     debug: false,
   });
-  const result = new CodeGenerator(code, compiledAST)
-    .generate().code;
+  const result = new CodeGenerator(code, compiledAST).generate().code;
 
   return result;
 }

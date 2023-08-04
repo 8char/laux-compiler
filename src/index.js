@@ -1,6 +1,6 @@
-import compiler from './compiler';
-import parser from './parser';
-import CodeGenerator from './codegenerator';
+import compiler from "./compiler";
+import parser from "./parser";
+import CodeGenerator from "./codegenerator";
 
 export default function compile(code) {
   const compiledAST = compiler.compile(
@@ -10,7 +10,5 @@ export default function compile(code) {
     },
   );
 
-  return new CodeGenerator(code, compiledAST)
-    .generate()
-    .code;
+  return new CodeGenerator(code, compiledAST).generate().code;
 }

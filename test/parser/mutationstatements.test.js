@@ -7,9 +7,9 @@
 // x ..= "me" -- x = x .. "me"
 // x %= 2 -- x = x % 2
 
-import chai, { expect } from 'chai';
-import chaiSubset from 'chai-subset';
-import parser from '../../src/parser';
+import chai, { expect } from "chai";
+import chaiSubset from "chai-subset";
+import parser from "../../src/parser";
 
 chai.use(chaiSubset);
 
@@ -18,22 +18,22 @@ export default {
    * Simple addition mutation
    */
   additionMutation: () => {
-    const { chunk } = parser.parse('x += 5');
+    const { chunk } = parser.parse("x += 5");
 
     expect(chunk).to.deep.equal({
-      type: 'Chunk',
+      type: "Chunk",
       body: [
         {
-          type: 'MutationStatement',
+          type: "MutationStatement",
           expression: {
             isLocal: undefined,
-            name: 'x',
-            type: 'Identifier',
+            name: "x",
+            type: "Identifier",
           },
-          sign: '+',
+          sign: "+",
           value: {
-            raw: '5',
-            type: 'NumericLiteral',
+            raw: "5",
+            type: "NumericLiteral",
             value: 5,
           },
         },
@@ -45,22 +45,22 @@ export default {
    * Simple subtraction mutation
    */
   subtractionMutation: () => {
-    const { chunk } = parser.parse('x -= 5');
+    const { chunk } = parser.parse("x -= 5");
 
     expect(chunk).to.deep.equal({
-      type: 'Chunk',
+      type: "Chunk",
       body: [
         {
-          type: 'MutationStatement',
+          type: "MutationStatement",
           expression: {
             isLocal: undefined,
-            name: 'x',
-            type: 'Identifier',
+            name: "x",
+            type: "Identifier",
           },
-          sign: '-',
+          sign: "-",
           value: {
-            raw: '5',
-            type: 'NumericLiteral',
+            raw: "5",
+            type: "NumericLiteral",
             value: 5,
           },
         },
@@ -72,22 +72,22 @@ export default {
    * Simple multiplication mutation
    */
   multiplicationMutation: () => {
-    const { chunk } = parser.parse('x *= 5');
+    const { chunk } = parser.parse("x *= 5");
 
     expect(chunk).to.deep.equal({
-      type: 'Chunk',
+      type: "Chunk",
       body: [
         {
-          type: 'MutationStatement',
+          type: "MutationStatement",
           expression: {
             isLocal: undefined,
-            name: 'x',
-            type: 'Identifier',
+            name: "x",
+            type: "Identifier",
           },
-          sign: '*',
+          sign: "*",
           value: {
-            raw: '5',
-            type: 'NumericLiteral',
+            raw: "5",
+            type: "NumericLiteral",
             value: 5,
           },
         },
@@ -99,22 +99,22 @@ export default {
    * Simple division mutation
    */
   divisionMutation: () => {
-    const { chunk } = parser.parse('x /= 5');
+    const { chunk } = parser.parse("x /= 5");
 
     expect(chunk).to.deep.equal({
-      type: 'Chunk',
+      type: "Chunk",
       body: [
         {
-          type: 'MutationStatement',
+          type: "MutationStatement",
           expression: {
             isLocal: undefined,
-            name: 'x',
-            type: 'Identifier',
+            name: "x",
+            type: "Identifier",
           },
-          sign: '/',
+          sign: "/",
           value: {
-            raw: '5',
-            type: 'NumericLiteral',
+            raw: "5",
+            type: "NumericLiteral",
             value: 5,
           },
         },
@@ -126,22 +126,22 @@ export default {
    * Simple modulus mutation
    */
   modulusMutation: () => {
-    const { chunk } = parser.parse('x %= 5');
+    const { chunk } = parser.parse("x %= 5");
 
     expect(chunk).to.deep.equal({
-      type: 'Chunk',
+      type: "Chunk",
       body: [
         {
-          type: 'MutationStatement',
+          type: "MutationStatement",
           expression: {
             isLocal: undefined,
-            name: 'x',
-            type: 'Identifier',
+            name: "x",
+            type: "Identifier",
           },
-          sign: '%',
+          sign: "%",
           value: {
-            raw: '5',
-            type: 'NumericLiteral',
+            raw: "5",
+            type: "NumericLiteral",
             value: 5,
           },
         },
@@ -153,22 +153,22 @@ export default {
    * Simple increment mutation
    */
   incrementMutation: () => {
-    const { chunk } = parser.parse('x++');
+    const { chunk } = parser.parse("x++");
 
     expect(chunk).to.deep.equal({
-      type: 'Chunk',
+      type: "Chunk",
       body: [
         {
-          type: 'MutationStatement',
+          type: "MutationStatement",
           expression: {
             isLocal: undefined,
-            name: 'x',
-            type: 'Identifier',
+            name: "x",
+            type: "Identifier",
           },
-          sign: '+',
+          sign: "+",
           value: {
-            raw: '1',
-            type: 'NumericLiteral',
+            raw: "1",
+            type: "NumericLiteral",
             value: 1,
           },
         },
@@ -180,22 +180,22 @@ export default {
    * Simple shortcircuit or mutation
    */
   shortcircuitOrMutation: () => {
-    const { chunk } = parser.parse('x ||= 2');
+    const { chunk } = parser.parse("x ||= 2");
 
     expect(chunk).to.deep.equal({
-      type: 'Chunk',
+      type: "Chunk",
       body: [
         {
-          type: 'MutationStatement',
+          type: "MutationStatement",
           expression: {
             isLocal: undefined,
-            name: 'x',
-            type: 'Identifier',
+            name: "x",
+            type: "Identifier",
           },
-          sign: '||',
+          sign: "||",
           value: {
-            raw: '2',
-            type: 'NumericLiteral',
+            raw: "2",
+            type: "NumericLiteral",
             value: 2,
           },
         },
@@ -207,23 +207,23 @@ export default {
    * Simple concatenation mutation
    */
   concatenationMutation: () => {
-    const { chunk } = parser.parse('x ..= \'me\'');
+    const { chunk } = parser.parse("x ..= 'me'");
 
     expect(chunk).to.deep.equal({
-      type: 'Chunk',
+      type: "Chunk",
       body: [
         {
-          type: 'MutationStatement',
+          type: "MutationStatement",
           expression: {
             isLocal: undefined,
-            name: 'x',
-            type: 'Identifier',
+            name: "x",
+            type: "Identifier",
           },
-          sign: '..',
+          sign: "..",
           value: {
-            raw: '\'me\'',
-            type: 'StringLiteral',
-            value: 'me',
+            raw: "'me'",
+            type: "StringLiteral",
+            value: "me",
           },
         },
       ],

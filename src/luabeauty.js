@@ -1,8 +1,8 @@
 /*! https://mths.be/luamin v1.0.2 by @mathias */
 /*--------------------------------------------------------------------------*/
 
-import extend from 'extend';
-import parser from './parser';
+import extend from "extend";
+import parser from "./parser";
 
 parser.defaultOptions.comments = true;
 parser.defaultOptions.scope = true;
@@ -13,39 +13,53 @@ const regexAlphaNumUnderscore = /[a-zA-Z0-9_]/;
 const regexVarName = /^[A-Z_][0-9A-Z_]*$/i;
 const regexDigits = /[0-9]/;
 
-let indentString = '';
+let indentString = "";
 
 // http://www.lua.org/manual/5.2/manual.html#3.4.7
 // http://www.lua.org/source/5.2/lparser.c.html#priority
 const PRECEDENCE = {
   or: 1,
   and: 2,
-  '<': 3,
-  '>': 3,
-  '<=': 3,
-  '>=': 3,
-  '~=': 3,
-  '==': 3,
-  '..': 5,
-  '+': 6,
-  '-': 6, // binary -
-  '*': 7,
-  '/': 7,
-  '%': 7,
+  "<": 3,
+  ">": 3,
+  "<=": 3,
+  ">=": 3,
+  "~=": 3,
+  "==": 3,
+  "..": 5,
+  "+": 6,
+  "-": 6, // binary -
+  "*": 7,
+  "/": 7,
+  "%": 7,
   unarynot: 8,
-  'unary#': 8,
-  'unary-': 8,
-  'unary!': 8, // unary -
-  '^': 10,
+  "unary#": 8,
+  "unary-": 8,
+  "unary!": 8, // unary -
+  "^": 10,
 };
 
 const KEYWORDS = [
-  'do', 'if', 'in', 'or',
-  'and', 'end', 'for', 'not', 'nil',
-  'else', 'goto', 'then',
-  'break', 'local', 'until', 'while',
-  'elseif', 'repeat', 'return',
-  'function',
+  "do",
+  "if",
+  "in",
+  "or",
+  "and",
+  "end",
+  "for",
+  "not",
+  "nil",
+  "else",
+  "goto",
+  "then",
+  "break",
+  "local",
+  "until",
+  "while",
+  "elseif",
+  "repeat",
+  "return",
+  "function",
 ];
 
 const each = function (array, fn) {
@@ -82,8 +96,12 @@ var generateLAUIdentifier = function(expression) {
 
 const generateAssert = function (expression, message) {
   const { ast } = parser;
-  const assertId = ast.identifier('assert');
-  const messageLiteral = ast.literal(parser.tokenTypes.StringLiteral, message, `"${message}"`);
+  const assertId = ast.identifier("assert");
+  const messageLiteral = ast.literal(
+    parser.tokenTypes.StringLiteral,
+    message,
+    `"${message}"`,
+  );
   const callExp = ast.callExpression(assertId, [expression, messageLiteral]);
 
   return ast.callStatement(callExp);
@@ -92,12 +110,12 @@ const generateAssert = function (expression, message) {
 /*--------------------------------------------------------------------------*/
 
 const joinStatements = function (a, b, separator, depth) {
-  separator || (separator = ' ');
+  separator || (separator = " ");
 
   const lastCharA = a.slice(-1);
   const firstCharB = b.charAt(0);
 
-  if (lastCharA == '' || firstCharB == '') {
+  if (lastCharA == "" || firstCharB == "") {
     return a + b;
   }
   if (regexAlphaUnderscore.test(lastCharA)) {
@@ -112,8 +130,8 @@ const joinStatements = function (a, b, separator, depth) {
   }
   if (regexDigits.test(lastCharA)) {
     if (
-      firstCharB == '('
-      || !(firstCharB == '.' || regexAlphaUnderscore.test(firstCharB))
+      firstCharB == "(" ||
+      !(firstCharB == "." || regexAlphaUnderscore.test(firstCharB))
     ) {
       // e.g. `1` + `+`
       // e.g. `1` + `==`
@@ -123,11 +141,11 @@ const joinStatements = function (a, b, separator, depth) {
     // e.g. `1` + `and`
     return a + separator + b;
   }
-  if (lastCharA == firstCharB && lastCharA == '-') {
+  if (lastCharA == firstCharB && lastCharA == "-") {
     // e.g. `1-` + `-2`
     return a + separator + b;
   }
-  if (lastCharA == '!') {
+  if (lastCharA == "!") {
     return a + b;
   }
 
@@ -135,21 +153,21 @@ const joinStatements = function (a, b, separator, depth) {
 };
 
 const formatBase = function (base, depth) {
-  let result = '';
+  let result = "";
   const { type } = base;
-  const needsParens = base.inParens && (
-    type == 'BinaryExpression'
-    || type == 'FunctionDeclaration'
-    || type == 'TableConstructorExpression'
-    || type == 'LogicalExpression'
-    || type == 'StringLiteral'
-  );
+  const needsParens =
+    base.inParens &&
+    (type == "BinaryExpression" ||
+      type == "FunctionDeclaration" ||
+      type == "TableConstructorExpression" ||
+      type == "LogicalExpression" ||
+      type == "StringLiteral");
   if (needsParens) {
-    result += '(';
+    result += "(";
   }
   result += formatExpression(base, depth);
   if (needsParens) {
-    result += ')';
+    result += ")";
   }
   return result;
 };
@@ -157,30 +175,38 @@ const formatBase = function (base, depth) {
 var formatExpression = function (expression, depth, options) {
   const indent = Array(depth + 1).join(indentString);
 
-  options = extend({
-    precedence: 0,
-    preserveIdentifiers: false,
-  }, options);
+  options = extend(
+    {
+      precedence: 0,
+      preserveIdentifiers: false,
+    },
+    options,
+  );
 
-  let result = '';
+  let result = "";
   let currentPrecedence;
   let associativity;
   let operator;
 
   const expressionType = expression.type;
 
-  if (expressionType == 'Identifier') {
-    if (expression.name != 'self' && expression.isLocal == false && expression.name != '_G') {
+  if (expressionType == "Identifier") {
+    if (
+      expression.name != "self" &&
+      expression.isLocal == false &&
+      expression.name != "_G"
+    ) {
       result = expression.name;
     } else {
-      result = expression.isLocal && !options.preserveIdentifiers
-        ? generateIdentifier(expression.name)
-        : expression.name;
+      result =
+        expression.isLocal && !options.preserveIdentifiers
+          ? generateIdentifier(expression.name)
+          : expression.name;
     }
-  } else if (expressionType == 'StringLiteral') {
+  } else if (expressionType == "StringLiteral") {
     let { raw } = expression;
     let match;
-    while (match = /\\([0-9]+)/g.exec(raw)) {
+    while ((match = /\\([0-9]+)/g.exec(raw))) {
       const str = match[0];
       const num = parseInt(str.substr(1));
       if (num) {
@@ -195,48 +221,49 @@ var formatExpression = function (expression, depth, options) {
 
     result = raw;
   } else if (
-    expressionType == 'StringLiteral'
-    || expressionType == 'NumericLiteral'
-    || expressionType == 'BooleanLiteral'
-    || expressionType == 'NilLiteral'
-    || expressionType == 'VarargLiteral'
+    expressionType == "StringLiteral" ||
+    expressionType == "NumericLiteral" ||
+    expressionType == "BooleanLiteral" ||
+    expressionType == "NilLiteral" ||
+    expressionType == "VarargLiteral"
   ) {
     result = expression.raw;
   } else if (
-    expressionType == 'LogicalExpression'
-    || expressionType == 'BinaryExpression'
+    expressionType == "LogicalExpression" ||
+    expressionType == "BinaryExpression"
   ) {
     // If an expression with precedence x
     // contains an expression with precedence < x,
     // the inner expression must be wrapped in parens.
     operator = expression.operator;
     currentPrecedence = PRECEDENCE[operator];
-    associativity = 'left';
+    associativity = "left";
 
     result = formatExpression(expression.left, depth, {
       precedence: currentPrecedence,
-      direction: 'left',
+      direction: "left",
       parent: operator,
     });
     result = joinStatements(result, operator);
-    result = joinStatements(result, formatExpression(expression.right, depth, {
-      precedence: currentPrecedence,
-      direction: 'right',
-      parent: operator,
-    }));
+    result = joinStatements(
+      result,
+      formatExpression(expression.right, depth, {
+        precedence: currentPrecedence,
+        direction: "right",
+        parent: operator,
+      }),
+    );
 
-    if (operator == '^' || operator == '..') {
-      associativity = 'right';
+    if (operator == "^" || operator == "..") {
+      associativity = "right";
     }
 
     if (
-      currentPrecedence < options.precedence
-      || (
-        currentPrecedence == options.precedence
-        && associativity != options.direction
-        && options.parent != '+'
-        && !(options.parent == '*' && (operator == '/' || operator == '*'))
-      )
+      currentPrecedence < options.precedence ||
+      (currentPrecedence == options.precedence &&
+        associativity != options.direction &&
+        options.parent != "+" &&
+        !(options.parent == "*" && (operator == "/" || operator == "*")))
     ) {
       // The most simple case here is that of
       // protecting the parentheses on the RHS of
@@ -251,7 +278,7 @@ var formatExpression = function (expression, depth, options) {
       // parentheses in the cases where we don’t have to.
       result = `(${result})`;
     }
-  } else if (expressionType == 'UnaryExpression') {
+  } else if (expressionType == "UnaryExpression") {
     operator = expression.operator;
     currentPrecedence = PRECEDENCE[`unary${operator}`];
 
@@ -263,22 +290,19 @@ var formatExpression = function (expression, depth, options) {
     );
 
     if (
-      currentPrecedence < options.precedence
+      currentPrecedence < options.precedence &&
       // In principle, we should parenthesize the RHS of an
       // expression like `3^-2`, because `^` has higher precedence
       // than unary `-` according to the manual. But that is
       // misleading on the RHS of `^`, since the parser will
       // always try to find a unary operator regardless of
       // precedence.
-      && !(
-        (options.parent == '^')
-        && options.direction == 'right'
-      )
+      !(options.parent == "^" && options.direction == "right")
     ) {
       result = `(${result})`;
     }
-  } else if (expressionType == 'CallExpression') {
-    if (expression.base.type == 'FunctionDeclaration') {
+  } else if (expressionType == "CallExpression") {
+    if (expression.base.type == "FunctionDeclaration") {
       result = `(${formatBase(expression.base, depth)})(`;
     } else {
       result = `${formatBase(expression.base, depth)}(`;
@@ -288,23 +312,27 @@ var formatExpression = function (expression, depth, options) {
     each(args, (argument, needsComma) => {
       result += formatExpression(argument, depth);
       if (needsComma) {
-        result += ', ';
+        result += ", ";
       }
     });
-    result += ')';
-  } else if (expressionType == 'TableCallExpression') {
-    result = formatExpression(expression.base, depth)
-      + formatExpression(expression.arguments, depth);
-  } else if (expressionType == 'StringCallExpression') {
-    result = formatExpression(expression.base, depth)
-      + formatExpression(expression.argument, depth);
-  } else if (expressionType == 'IndexExpression') {
-    let out = `${formatBase(expression.base, depth)}[${
-      formatExpression(expression.index, depth)}]`;
+    result += ")";
+  } else if (expressionType == "TableCallExpression") {
+    result =
+      formatExpression(expression.base, depth) +
+      formatExpression(expression.arguments, depth);
+  } else if (expressionType == "StringCallExpression") {
+    result =
+      formatExpression(expression.base, depth) +
+      formatExpression(expression.argument, depth);
+  } else if (expressionType == "IndexExpression") {
+    let out = `${formatBase(expression.base, depth)}[${formatExpression(
+      expression.index,
+      depth,
+    )}]`;
 
-    if (expression.base.name == '_G') {
+    if (expression.base.name == "_G") {
       var { index } = expression;
-      if (index.type == 'StringLiteral') {
+      if (index.type == "StringLiteral") {
         var strName = formatExpression(index, depth);
         var name = strName.substr(1, strName.length - 2);
         if (name.match(regexVarName) && KEYWORDS.indexOf(name) == -1) {
@@ -313,28 +341,30 @@ var formatExpression = function (expression, depth, options) {
       }
     } else {
       var { index } = expression;
-      if (index.type == 'StringLiteral') {
+      if (index.type == "StringLiteral") {
         var strName = formatExpression(index, depth);
         var name = strName.substr(1, strName.length - 2);
         if (name.match(regexVarName) && KEYWORDS.indexOf(name) == -1) {
           out = joinStatements(
             formatExpression(expression.base, depth),
             formatExpression(parser.ast.identifier(name), depth),
-            '.',
+            ".",
           );
         }
       }
     }
 
     result = out;
-  } else if (expressionType == 'MemberExpression') {
-    result = formatBase(expression.base, depth) + expression.indexer
-      + formatExpression(expression.identifier, depth, {
+  } else if (expressionType == "MemberExpression") {
+    result =
+      formatBase(expression.base, depth) +
+      expression.indexer +
+      formatExpression(expression.identifier, depth, {
         preserveIdentifiers: true,
       });
-  } else if (expressionType == 'FunctionDeclaration') {
+  } else if (expressionType == "FunctionDeclaration") {
     const { body } = expression;
-    result = 'function(';
+    result = "function(";
     if (expression.parameters.length) {
       each(expression.parameters, (parameter, needsComma) => {
         // `Identifier`s have a `name`, `VarargLiteral`s have a `value`
@@ -343,54 +373,66 @@ var formatExpression = function (expression, depth, options) {
           : parameter.value;
 
         if (needsComma) {
-          result += ', ';
+          result += ", ";
         }
       });
     }
 
     var isEmpty = body.length == 0;
-    let sep = isEmpty ? null : '\n';
-    if (expression.body.length > 0) sep = '\n';
+    let sep = isEmpty ? null : "\n";
+    if (expression.body.length > 0) sep = "\n";
 
-    result += ')';
+    result += ")";
     result = joinStatements(result, formatStatement(body, depth + 1), sep);
-    result = joinStatements(result, `${isEmpty ? '' : indent}end`, sep);
-  } else if (expressionType == 'TableConstructorExpression') {
+    result = joinStatements(result, `${isEmpty ? "" : indent}end`, sep);
+  } else if (expressionType == "TableConstructorExpression") {
     var isEmpty = expression.fields.length <= 1;
 
-    result = '{';
-    result += isEmpty ? '' : '\n';
+    result = "{";
+    result += isEmpty ? "" : "\n";
 
-    const innerIndent = isEmpty ? '' : Array(depth + 2).join(indentString);
+    const innerIndent = isEmpty ? "" : Array(depth + 2).join(indentString);
 
     each(expression.fields, (field, needsComma) => {
-      if (field.type == 'TableKey') {
+      if (field.type == "TableKey") {
         const strName = formatExpression(field.key, depth);
-        const name = field.key.type === 'StringLiteral' ? strName.substr(1, strName.length - 2) : strName;
+        const name =
+          field.key.type === "StringLiteral"
+            ? strName.substr(1, strName.length - 2)
+            : strName;
 
-        if (field.key.type === 'StringLiteral' && name.match(regexVarName)) {
-          result += `${innerIndent + name} = ${formatExpression(field.value, depth + 1)}`;
+        if (field.key.type === "StringLiteral" && name.match(regexVarName)) {
+          result += `${innerIndent + name} = ${formatExpression(
+            field.value,
+            depth + 1,
+          )}`;
         } else {
-          result += `${innerIndent}[${formatExpression(field.key, depth)}] = ${
-            formatExpression(field.value, depth + 1)}`;
+          result += `${innerIndent}[${formatExpression(
+            field.key,
+            depth,
+          )}] = ${formatExpression(field.value, depth + 1)}`;
         }
-      } else if (field.type == 'TableValue') {
+      } else if (field.type == "TableValue") {
         result += innerIndent + formatExpression(field.value, depth + 1);
-      } else { // at this point, `field.type == "TableKeyString"`
-        result += `${innerIndent + formatExpression(field.key, {
-          preserveIdentifiers: true,
-        })} = ${formatExpression(field.value, depth + 1)}`;
+      } else {
+        // at this point, `field.type == "TableKeyString"`
+        result += `${
+          innerIndent +
+          formatExpression(field.key, {
+            preserveIdentifiers: true,
+          })
+        } = ${formatExpression(field.value, depth + 1)}`;
       }
       if (needsComma) {
-        result += ',\n';
+        result += ",\n";
       }
     });
 
-    if (!isEmpty) result += '\n';
+    if (!isEmpty) result += "\n";
 
-    result += `${isEmpty ? '' : indent}}`;
-  }
-  /* else if (expressionType == "FatArrowDeclaration" || expressionType == "ThinArrowDeclaration") {
+    result += `${isEmpty ? "" : indent}}`;
+  } else {
+    /* else if (expressionType == "FatArrowDeclaration" || expressionType == "ThinArrowDeclaration") {
     var body = expression.body;
 
     result += "function(";
@@ -433,7 +475,6 @@ var formatExpression = function (expression, depth, options) {
     result = joinStatements(result, (isEmpty ? "" : indent) + "end", sep);
 
   } */
-  else {
     throw TypeError(`Unknown expression type: \`${expressionType}\``);
   }
 
@@ -451,11 +492,11 @@ const getStatementReferences = function (statement) {
   const refs = [];
 
   switch (type) {
-    case 'CallStatement':
+    case "CallStatement":
       appendArray(refs, getStatementReferences(statement.expression));
       break;
 
-    case 'CallExpression':
+    case "CallExpression":
       appendArray(refs, getStatementReferences(statement.base));
 
       each(statement.arguments, (arg) => {
@@ -466,8 +507,8 @@ const getStatementReferences = function (statement) {
 
       break;
 
-    case 'LocalStatement':
-    case 'AssignmentStatement':
+    case "LocalStatement":
+    case "AssignmentStatement":
       each(statement.variables, (variable) => {
         const newRefs = getStatementReferences(variable);
 
@@ -476,12 +517,12 @@ const getStatementReferences = function (statement) {
 
       break;
 
-    case 'MemberExpression':
+    case "MemberExpression":
       appendArray(refs, getStatementReferences(statement.base));
       appendArray(refs, getStatementReferences(statement.identifier));
       break;
 
-    case 'Identifier':
+    case "Identifier":
       refs.push(statement.name);
       break;
   }
@@ -492,18 +533,22 @@ const getStatementReferences = function (statement) {
 const shouldHaveEmptyLine = function (statement, lastStatement) {
   const sType = statement.type;
   const lsType = lastStatement.type;
-  if (sType == 'IfStatement' && lsType == 'IfStatement') {
+  if (sType == "IfStatement" && lsType == "IfStatement") {
     if (lastStatement.inline && statement.inline) return false;
     return true;
   }
-  if (sType == 'FunctionDeclaration') return true;
+  if (sType == "FunctionDeclaration") return true;
 
-  if (sType == 'ForGenericStatement'
-    || sType == 'ForNumericStatement'
-    || sType == 'WhileStatement') return true;
+  if (
+    sType == "ForGenericStatement" ||
+    sType == "ForNumericStatement" ||
+    sType == "WhileStatement"
+  )
+    return true;
 
-  if (sType == 'AssignmentStatement' || lsType == 'AssignmentStatement') {
-    if (lsType == 'MutationStatement' || sType == 'MutationStatement') return false;
+  if (sType == "AssignmentStatement" || lsType == "AssignmentStatement") {
+    if (lsType == "MutationStatement" || sType == "MutationStatement")
+      return false;
   }
 
   if (statement.type != lastStatement.type) {
@@ -536,137 +581,163 @@ const shouldHaveEmptyLine = function (statement, lastStatement) {
 };
 
 const formatStatementList = function (body, depth) {
-  let result = '';
+  let result = "";
   const indent = Array(depth + 1).join(indentString);
   let lastStatement;
   each(body, (statement) => {
     if (lastStatement && shouldHaveEmptyLine(statement, lastStatement)) {
-      result += '\n';
+      result += "\n";
     }
 
-    result = joinStatements(result, indent + formatStatement(statement, depth), '\n');
+    result = joinStatements(
+      result,
+      indent + formatStatement(statement, depth),
+      "\n",
+    );
     lastStatement = statement;
   });
   return result;
 };
 
 var formatStatement = function (statement, depth) {
-  let result = '';
+  let result = "";
   const statementType = statement.type;
   const indent = Array(depth + 1).join(indentString);
 
-  if (statementType == 'BlockStatement') {
+  if (statementType == "BlockStatement") {
     result = formatStatementList(statement.body, depth);
-  } else if (statementType == 'AssignmentStatement') {
+  } else if (statementType == "AssignmentStatement") {
     // left-hand side
     each(statement.variables, (variable, needsComma) => {
       result += formatExpression(variable, depth);
       if (needsComma) {
-        result += ', ';
+        result += ", ";
       }
     });
 
     // right-hand side
-    result += ' = ';
+    result += " = ";
     each(statement.init, (init, needsComma) => {
       result += formatExpression(init, depth);
       if (needsComma) {
-        result += ', ';
+        result += ", ";
       }
     });
-  } else if (statementType == 'LocalStatement') {
-    result = 'local ';
+  } else if (statementType == "LocalStatement") {
+    result = "local ";
 
     // left-hand side
     each(statement.variables, (variable, needsComma) => {
       // Variables in a `LocalStatement` are always local, duh
       result += generateIdentifier(variable.name);
       if (needsComma) {
-        result += ', ';
+        result += ", ";
       }
     });
 
     // right-hand side
     if (statement.init.length) {
-      result += ' = ';
+      result += " = ";
       each(statement.init, (init, needsComma) => {
         result += formatExpression(init, depth);
         if (needsComma) {
-          result += ', ';
+          result += ", ";
         }
       });
     }
-  } else if (statementType == 'CallStatement') {
+  } else if (statementType == "CallStatement") {
     result = formatExpression(statement.expression, depth);
-  } else if (statementType == 'IfStatement') {
+  } else if (statementType == "IfStatement") {
     const { inline } = statement;
     var isEmpty = statement.clauses[0].body.length == 0;
 
     result = joinStatements(
-      'if',
+      "if",
       formatExpression(statement.clauses[0].condition, depth),
     );
-    result = joinStatements(result, 'then');
+    result = joinStatements(result, "then");
     result = joinStatements(
       result,
-      formatStatement(statement.clauses[0].body, inline ? 0 : (depth + 1)),
-      (isEmpty || inline) ? null : '\n',
+      formatStatement(statement.clauses[0].body, inline ? 0 : depth + 1),
+      isEmpty || inline ? null : "\n",
     );
     each(statement.clauses.slice(1), (clause) => {
       const isEmpty = clause.body.length == 0;
-      const sep = isEmpty ? null : '\n';
-      const indentStr = isEmpty ? '' : indent;
+      const sep = isEmpty ? null : "\n";
+      const indentStr = isEmpty ? "" : indent;
 
       if (clause.condition) {
         result = joinStatements(result, `${indentStr}elseif`, sep);
-        result = joinStatements(result, formatExpression(clause.condition, depth));
-        result = joinStatements(result, 'then');
+        result = joinStatements(
+          result,
+          formatExpression(clause.condition, depth),
+        );
+        result = joinStatements(result, "then");
       } else {
         result = joinStatements(result, `${indentStr}else`, sep);
       }
 
-      result = joinStatements(result, formatStatement(clause.body, depth + 1), sep);
+      result = joinStatements(
+        result,
+        formatStatement(clause.body, depth + 1),
+        sep,
+      );
     });
 
-    if (!isEmpty && !inline) result = joinStatements(result, `${indent}end`, '\n');
-    else result = joinStatements(result, 'end');
-  } else if (statementType == 'WhileStatement') {
+    if (!isEmpty && !inline)
+      result = joinStatements(result, `${indent}end`, "\n");
+    else result = joinStatements(result, "end");
+  } else if (statementType == "WhileStatement") {
     var isEmpty = statement.body.length == 0;
-    var sep = isEmpty ? null : '\n';
+    var sep = isEmpty ? null : "\n";
 
-    result = joinStatements('while', formatExpression(statement.condition, depth));
-    result = joinStatements(result, 'do');
-    result = joinStatements(result, formatStatement(statement.body, depth + 1), sep);
-    result = joinStatements(result, `${isEmpty ? '' : indent}end`, sep);
-  } else if (statementType == 'DoStatement') {
+    result = joinStatements(
+      "while",
+      formatExpression(statement.condition, depth),
+    );
+    result = joinStatements(result, "do");
+    result = joinStatements(
+      result,
+      formatStatement(statement.body, depth + 1),
+      sep,
+    );
+    result = joinStatements(result, `${isEmpty ? "" : indent}end`, sep);
+  } else if (statementType == "DoStatement") {
     var isEmpty = statement.body.length == 0;
-    var sep = isEmpty ? null : '\n';
+    var sep = isEmpty ? null : "\n";
 
-    result = joinStatements('do', formatStatement(statement.body, depth + 1), sep);
-    result = joinStatements(result, `${isEmpty ? '' : indent}end`, sep);
-  } else if (statementType == 'ReturnStatement') {
-    result = 'return';
+    result = joinStatements(
+      "do",
+      formatStatement(statement.body, depth + 1),
+      sep,
+    );
+    result = joinStatements(result, `${isEmpty ? "" : indent}end`, sep);
+  } else if (statementType == "ReturnStatement") {
+    result = "return";
 
     each(statement.arguments, (argument, needsComma) => {
       result = joinStatements(result, formatExpression(argument, depth));
       if (needsComma) {
-        result += ', ';
+        result += ", ";
       }
     });
-  } else if (statementType == 'BreakStatement') {
-    result = 'break';
-  } else if (statementType == 'ContinueStatement') {
-    result = 'continue';
-  } else if (statementType == 'RepeatStatement') {
-    result = joinStatements('repeat', formatStatement(statement.body, depth));
-    result = joinStatements(result, 'until');
-    result = joinStatements(result, formatExpression(statement.condition, depth));
-  } else if (statementType == 'FunctionDeclaration') {
+  } else if (statementType == "BreakStatement") {
+    result = "break";
+  } else if (statementType == "ContinueStatement") {
+    result = "continue";
+  } else if (statementType == "RepeatStatement") {
+    result = joinStatements("repeat", formatStatement(statement.body, depth));
+    result = joinStatements(result, "until");
+    result = joinStatements(
+      result,
+      formatExpression(statement.condition, depth),
+    );
+  } else if (statementType == "FunctionDeclaration") {
     const { body } = statement;
 
-    result = `${statement.isLocal ? 'local ' : ''}function `;
+    result = `${statement.isLocal ? "local " : ""}function `;
     result += formatExpression(statement.identifier, depth);
-    result += '(';
+    result += "(";
 
     // if (statement.parameters.length) {
     const params = statement.parameters;
@@ -677,65 +748,75 @@ var formatStatement = function (statement, depth) {
         : parameter.value;
 
       if (needsComma) {
-        result += ', ';
+        result += ", ";
       }
     });
     // }
 
     var isEmpty = body.length == 0;
-    var sep = isEmpty ? null : '\n';
+    var sep = isEmpty ? null : "\n";
 
-    result += ')';
+    result += ")";
     result = joinStatements(result, formatStatement(body, depth + 1), sep);
-    result = joinStatements(result, `${isEmpty ? '' : indent}end`, sep);
-  } else if (statementType == 'ForGenericStatement') {
+    result = joinStatements(result, `${isEmpty ? "" : indent}end`, sep);
+  } else if (statementType == "ForGenericStatement") {
     // see also `ForNumericStatement`
 
-    result = 'for ';
+    result = "for ";
 
     each(statement.variables, (variable, needsComma) => {
       // The variables in a `ForGenericStatement` are always local
       result += generateIdentifier(variable.name);
       if (needsComma) {
-        result += ', ';
+        result += ", ";
       }
     });
 
-    result += ' in';
+    result += " in";
 
     each(statement.iterators, (iterator, needsComma) => {
       result = joinStatements(result, formatExpression(iterator, depth));
       if (needsComma) {
-        result += ', ';
+        result += ", ";
       }
     });
 
     var isEmpty = statement.body.length == 0;
-    var sep = isEmpty ? null : '\n';
+    var sep = isEmpty ? null : "\n";
 
-    result = joinStatements(result, 'do');
-    result = joinStatements(result, formatStatement(statement.body, depth + 1), sep);
-    result = joinStatements(result, `${isEmpty ? '' : indent}end`, sep);
-  } else if (statementType == 'ForNumericStatement') {
+    result = joinStatements(result, "do");
+    result = joinStatements(
+      result,
+      formatStatement(statement.body, depth + 1),
+      sep,
+    );
+    result = joinStatements(result, `${isEmpty ? "" : indent}end`, sep);
+  } else if (statementType == "ForNumericStatement") {
     var isEmpty = statement.body.length == 0;
-    var sep = isEmpty ? null : '\n';
+    var sep = isEmpty ? null : "\n";
 
     // The variables in a `ForNumericStatement` are always local
     result = `for ${generateIdentifier(statement.variable.name)} = `;
-    result += `${formatExpression(statement.start, depth)}, ${
-      formatExpression(statement.end, depth)}`;
+    result += `${formatExpression(statement.start, depth)}, ${formatExpression(
+      statement.end,
+      depth,
+    )}`;
 
     if (statement.step) {
       result += `, ${formatExpression(statement.step, depth)}`;
     }
 
-    result = joinStatements(result, 'do');
-    result = joinStatements(result, formatStatement(statement.body, depth + 1), sep);
-    result = joinStatements(result, `${isEmpty ? '' : indent}end`, sep);
-  } else if (statementType == 'LabelStatement') {
+    result = joinStatements(result, "do");
+    result = joinStatements(
+      result,
+      formatStatement(statement.body, depth + 1),
+      sep,
+    );
+    result = joinStatements(result, `${isEmpty ? "" : indent}end`, sep);
+  } else if (statementType == "LabelStatement") {
     // The identifier names in a `LabelStatement` can safely be renamed
     result = `::${generateIdentifier(statement.label.name)}::`;
-  } else if (statementType == 'GotoStatement') {
+  } else if (statementType == "GotoStatement") {
     // The identifier names in a `GotoStatement` can safely be renamed
     result = `goto ${generateIdentifier(statement.label.name)}`;
   } else {
@@ -749,18 +830,19 @@ const beautify = function (argument, _options) {
   // `argument` can be a Lua code snippet (string)
   // or a parser-compatible AST (object)
   // lauIdx = 0;
-  const ast = typeof argument === 'string'
-    ? parse(argument)
-    : argument;
+  const ast = typeof argument === "string" ? parse(argument) : argument;
 
   if (_options) {
-    const options = extend({
-      indent: 4,
-    }, {
-      indent: _options.indent,
-    });
+    const options = extend(
+      {
+        indent: 4,
+      },
+      {
+        indent: _options.indent,
+      },
+    );
 
-    indentString = Array(options.indent + 1).join(' ');
+    indentString = Array(options.indent + 1).join(" ");
   }
 
   return formatStatement(ast.body, 0);
@@ -769,7 +851,7 @@ const beautify = function (argument, _options) {
 /*--------------------------------------------------------------------------*/
 
 const luabeauty = {
-  version: '1.0.2',
+  version: "1.0.2",
   beautify,
 };
 

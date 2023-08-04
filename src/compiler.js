@@ -1,19 +1,20 @@
-import _, { first, unique } from 'underscore';
-import extend from 'extend';
+import _, { first, unique } from "underscore";
+import extend from "extend";
 
-import { uniqueId } from 'lodash';
-import * as b from './builder';
+import { uniqueId } from "lodash";
+import * as b from "./builder";
 
-import parser from './parser';
-import traverse from './visitor';
-import Buffer from './buffer';
-import CodeGenerator from './codegenerator';
-import ClassTransformer from './transformers/classes';
+import parser from "./parser";
+import traverse from "./visitor";
+import Buffer from "./buffer";
+import CodeGenerator from "./codegenerator";
+import ClassTransformer from "./transformers/classes";
 
-import createConcatFunction from './lau-functions/concat';
+import createConcatFunction from "./lau-functions/concat";
 
-let ast; let options; let
-  lauIdx;
+let ast;
+let options;
+let lauIdx;
 let currentClass;
 
 const utilFunctionFactory = {
@@ -49,9 +50,13 @@ const generateLAUIdentifier = function (expression, isLocal, name) {
 */
 
 const generateAssert = function (expression, message) {
-  const assertId = b.identifier('assert');
+  const assertId = b.identifier("assert");
   const messageLiteral = b.stringLiteral(message, `"${message}"`);
-  const expBin = b.binaryExpression('~=', expression, b.literal('NilLiteral', null, 'nil'));
+  const expBin = b.binaryExpression(
+    "~=",
+    expression,
+    b.literal("NilLiteral", null, "nil"),
+  );
   const callExp = b.callExpression(assertId, [expBin, messageLiteral]);
 
   return b.callStatement(callExp);
@@ -98,10 +103,10 @@ const generateUtilityFunctions = function () {
 
 const attachLocations = function (node, compiled) {
   if (node) {
-    if (typeof node.loc !== 'undefined') compiled.loc = node.loc;
-    if (typeof node.range !== 'undefined') compiled.range = node.range;
-    if (typeof node.inParens !== 'undefined') compiled.inParens = node.inParens;
-    if (typeof node.isLocal !== 'undefined') compiled.isLocal = node.isLocal;
+    if (typeof node.loc !== "undefined") compiled.loc = node.loc;
+    if (typeof node.range !== "undefined") compiled.range = node.range;
+    if (typeof node.inParens !== "undefined") compiled.inParens = node.inParens;
+    if (typeof node.isLocal !== "undefined") compiled.isLocal = node.isLocal;
   }
 
   return compiled;
@@ -119,90 +124,69 @@ const debugWrapScope = function (node, scope) {
   if (!options.debug) return scope;
   if (scope.length == 0) return scope;
 
-  const tblId = generateLAUIdentifier(b.identifier('tbl', true));
+  const tblId = generateLAUIdentifier(b.identifier("tbl", true));
 
   const { start } = node.loc;
   const { end } = node.loc;
 
   const errMsgs = [
     `[LAU] An error occured in the scope between [${start.line},${start.column}] and [${end.line},${end.column}]`,
-    '[LAU] Original error:',
-    b.indexExpression(
-      tblId,
-      b.literal('NumericLiteral', 2, 2),
-    ),
+    "[LAU] Original error:",
+    b.indexExpression(tblId, b.literal("NumericLiteral", 2, 2)),
   ];
 
   const errBody = [];
   _.each(errMsgs, (msg) => {
     let exp = msg;
-    if (typeof msg === 'string' || msg instanceof String) {
-      exp = b.literal('StringLiteral', msg, `"${msg}"`);
+    if (typeof msg === "string" || msg instanceof String) {
+      exp = b.literal("StringLiteral", msg, `"${msg}"`);
     }
 
     errBody.push(
       b.callStatement(
-        b.callExpression(
-          b.identifier('print'),
-          [
-            exp,
-            // b.binaryExpression("..", exp, b.literal("StringLiteral", "\\n", `"\\n"`))
-          ],
-        ),
+        b.callExpression(b.identifier("print"), [
+          exp,
+          // b.binaryExpression("..", exp, b.literal("StringLiteral", "\\n", `"\\n"`))
+        ]),
       ),
     );
   });
 
   return [
     b.localStatement(
-      [
-        tblId,
-      ],
+      [tblId],
       [
         b.tableConstructorExpression([
           b.tableValue(
-            b.callExpression(
-              b.identifier('pcall'),
-              [
-                b.functionExpression([], false, scope),
-              ],
-            ),
+            b.callExpression(b.identifier("pcall"), [
+              b.functionExpression([], false, scope),
+            ]),
           ),
         ]),
       ],
     ),
-    b.ifStatement(
-      [
-        b.ifClause(
-          b.unaryExpression(
-            'not',
-            b.indexExpression(
-              tblId,
-              b.literal('NumericLiteral', 1, 1),
-            ),
-          ),
-          errBody,
+    b.ifStatement([
+      b.ifClause(
+        b.unaryExpression(
+          "not",
+          b.indexExpression(tblId, b.literal("NumericLiteral", 1, 1)),
         ),
-        b.elseClause([
-          b.callStatement(
-            b.callExpression(
-              b.memberExpression(
-                b.identifier('table'),
-                '.',
-                b.identifier('remove'),
-              ),
-              [
-                tblId,
-                b.literal('NumericLiteral', 1, 1),
-              ],
+        errBody,
+      ),
+      b.elseClause([
+        b.callStatement(
+          b.callExpression(
+            b.memberExpression(
+              b.identifier("table"),
+              ".",
+              b.identifier("remove"),
             ),
+            [tblId, b.literal("NumericLiteral", 1, 1)],
           ),
-          b.returnStatement([
-            b.callExpression(b.identifier('unpack'), [tblId]),
-          ]),
-        ]),
-      ],
-    ),
+        ),
+        b.returnStatement([b.callExpression(b.identifier("unpack"), [tblId])]),
+      ]),
+    ]),
   ];
 };
 
@@ -212,10 +196,10 @@ function safeIndexer(obj) {
     return obj.map(safeIndexer);
   }
 
-  if (typeof obj === 'object' && obj !== null) {
+  if (typeof obj === "object" && obj !== null) {
     const result = {};
     Object.keys(obj).forEach((key) => {
-      const value = obj[key] === ':' ? '.' : safeIndexer(obj[key]);
+      const value = obj[key] === ":" ? "." : safeIndexer(obj[key]);
       result[key] = value;
     });
     return result;
@@ -260,17 +244,16 @@ var compileStatement = function (statement) {
   const { type } = statement;
 
   switch (type) {
-    case 'AssignmentStatement':
-      var variables = _.map(statement.variables, (variable) => compileExpression(variable));
+    case "AssignmentStatement":
+      var variables = _.map(statement.variables, (variable) =>
+        compileExpression(variable),
+      );
 
       var init = _.map(statement.init, (init) => compileExpression(init));
 
-      return attachLocations(
-        statement,
-        b.assignmentStatement(variables, init),
-      );
+      return attachLocations(statement, b.assignmentStatement(variables, init));
 
-    case 'LocalStatement':
+    case "LocalStatement":
       var init = _.map(statement.init, (init) => compileExpression(init));
 
       return attachLocations(
@@ -278,16 +261,16 @@ var compileStatement = function (statement) {
         b.localStatement(statement.variables, init),
       );
 
-    case 'CallStatement':
+    case "CallStatement":
       return attachLocations(
         statement,
         b.callStatement(compileExpression(statement.expression)),
       );
 
-    case 'IfStatement':
+    case "IfStatement":
       var clauses = _.map(statement.clauses, (clause) => {
         switch (clause.type) {
-          case 'IfClause':
+          case "IfClause":
             return attachLocations(
               clause,
               b.ifClause(
@@ -296,7 +279,7 @@ var compileStatement = function (statement) {
               ),
             );
 
-          case 'ElseifClause':
+          case "ElseifClause":
             return attachLocations(
               clause,
               b.elseifClause(
@@ -305,10 +288,12 @@ var compileStatement = function (statement) {
               ),
             );
 
-          case 'ElseClause':
+          case "ElseClause":
             return attachLocations(
               clause,
-              b.elseClause(debugWrapScope(statement, compileStatementList(clause.body))),
+              b.elseClause(
+                debugWrapScope(statement, compileStatementList(clause.body)),
+              ),
             );
 
           default:
@@ -316,12 +301,9 @@ var compileStatement = function (statement) {
         }
       });
 
-      return attachLocations(
-        statement,
-        b.ifStatement(clauses),
-      );
+      return attachLocations(statement, b.ifStatement(clauses));
 
-    case 'WhileStatement':
+    case "WhileStatement":
       return attachLocations(
         statement,
         b.whileStatement(
@@ -330,21 +312,20 @@ var compileStatement = function (statement) {
         ),
       );
 
-    case 'DoStatement':
+    case "DoStatement":
       return attachLocations(
         statement,
-        b.doStatement(debugWrapScope(statement, compileStatementList(statement.body))),
+        b.doStatement(
+          debugWrapScope(statement, compileStatementList(statement.body)),
+        ),
       );
 
-    case 'ReturnStatement':
+    case "ReturnStatement":
       var args = _.map(statement.arguments, (arg) => compileExpression(arg));
 
-      return attachLocations(
-        statement,
-        b.returnStatement(args),
-      );
+      return attachLocations(statement, b.returnStatement(args));
 
-    case 'RepeatStatement':
+    case "RepeatStatement":
       return attachLocations(
         statement,
         b.repeatStatement(
@@ -353,10 +334,10 @@ var compileStatement = function (statement) {
         ),
       );
 
-    case 'FunctionDeclaration':
+    case "FunctionDeclaration":
       return compileFunctionStatement(statement);
 
-    case 'ForGenericStatement':
+    case "ForGenericStatement":
       var iterators = _.map(statement.iterators, (it) => compileExpression(it));
 
       return attachLocations(
@@ -368,7 +349,7 @@ var compileStatement = function (statement) {
         ),
       );
 
-    case 'ForNumericStatement':
+    case "ForNumericStatement":
       return attachLocations(
         statement,
         b.forNumericStatement(
@@ -380,19 +361,23 @@ var compileStatement = function (statement) {
         ),
       );
 
-    case 'ForOfStatement':
-      var iterator = b.callExpression(b.identifier('pairs'), [
+    case "ForOfStatement":
+      var iterator = b.callExpression(b.identifier("pairs"), [
         compileExpression(statement.expression),
       ]);
 
       return attachLocations(
         statement,
         compileStatement(
-          b.forGenericStatement(statement.variables, [iterator], statement.body),
+          b.forGenericStatement(
+            statement.variables,
+            [iterator],
+            statement.body,
+          ),
         ),
       );
 
-    case 'MutationStatement':
+    case "MutationStatement":
       var expression = compileExpression(statement.expression);
       var value = compileExpression(statement.value);
 
@@ -409,61 +394,73 @@ var compileStatement = function (statement) {
         ),
       );
 
-    case 'LocalDestructorStatement':
+    case "LocalDestructorStatement":
       var body = [];
 
       var { init } = statement;
       var identifier;
-      if (init.type == 'CallExpression' || init.type == 'SafeMemberExpression') {
+      if (
+        init.type == "CallExpression" ||
+        init.type == "SafeMemberExpression"
+      ) {
         identifier = generateLAUIdentifier(init.base, true);
-        var local = b.localStatement(
-          [identifier],
-          [init],
-        );
+        var local = b.localStatement([identifier], [init]);
 
         body.push(compileStatement(local));
       }
 
       body.push(
         compileStatement(
-          generateAssert(identifier || init, 'cannot destructure nil value'),
+          generateAssert(identifier || init, "cannot destructure nil value"),
         ),
       );
 
-      var init = _.map(statement.variables, (variable) => b.memberExpression(identifier || init, '.', compileExpression(variable)));
+      var init = _.map(statement.variables, (variable) =>
+        b.memberExpression(
+          identifier || init,
+          ".",
+          compileExpression(variable),
+        ),
+      );
 
       body.push(b.localStatement(statement.variables, init));
 
       return body;
 
-    case 'TableDestructorStatement':
+    case "TableDestructorStatement":
       var body = [];
 
       var { init } = statement;
       var identifier;
-      if (init.type == 'CallExpression' || init.type == 'SafeMemberExpression') {
+      if (
+        init.type == "CallExpression" ||
+        init.type == "SafeMemberExpression"
+      ) {
         identifier = generateLAUIdentifier(init.base, true);
-        var local = b.localStatement(
-          [identifier],
-          [init],
-        );
+        var local = b.localStatement([identifier], [init]);
 
         body.push(compileStatement(local));
       }
 
       body.push(
         compileStatement(
-          generateAssert(identifier || init, 'cannot destructure nil value'),
+          generateAssert(identifier || init, "cannot destructure nil value"),
         ),
       );
 
-      var init = _.map(statement.variables, (variable) => b.memberExpression(identifier || init, '.', compileExpression(variable)));
+      var init = _.map(statement.variables, (variable) =>
+        b.memberExpression(
+          identifier || init,
+          ".",
+          compileExpression(variable),
+        ),
+      );
 
       body.push(b.assignmentStatement(statement.variables, init));
 
       return body;
 
-    case 'ClassStatement':
+    case "ClassStatement":
       const prevClass = currentClass;
       currentClass = statement;
 
@@ -472,11 +469,11 @@ var compileStatement = function (statement) {
 
       var strName = statement.identifier.name;
 
-      var idClass0 = b.identifier('_class_0', true);
-      var idParent0 = b.identifier('_parent_0', true);
-      var idBase0 = b.identifier('_base_0', true);
+      var idClass0 = b.identifier("_class_0", true);
+      var idParent0 = b.identifier("_parent_0", true);
+      var idBase0 = b.identifier("_base_0", true);
       var idSelf = b.selfExpression();
-      var idSetMetaTable = b.identifier('setmetatable');
+      var idSetMetaTable = b.identifier("setmetatable");
 
       if (!statement.isPublic) {
         body.push(b.localStatement([statement.identifier], []));
@@ -486,7 +483,7 @@ var compileStatement = function (statement) {
       var staticMembers = [];
       var baseTableKeys = [
         b.tableKeyString(
-          b.identifier('__name'),
+          b.identifier("__name"),
           b.stringLiteral(strName, `"${strName}"`),
         ),
       ];
@@ -495,10 +492,12 @@ var compileStatement = function (statement) {
 
       if (parent) {
         doBody.push(b.localStatement([idParent0], [parent]));
-        baseTableKeys.push(b.tableKeyString(
-          b.identifier('__base'),
-          b.memberExpression(parent, '.', b.identifier('__base')),
-        ));
+        baseTableKeys.push(
+          b.tableKeyString(
+            b.identifier("__base"),
+            b.memberExpression(parent, ".", b.identifier("__base")),
+          ),
+        );
       }
 
       _.each(statement.members, (member) => {
@@ -534,21 +533,22 @@ var compileStatement = function (statement) {
             expression: exp,
           });
         } else {
-          baseTableKeys.push(b.tableKeyString(
-            method.identifier,
-            exp,
-          ));
+          baseTableKeys.push(b.tableKeyString(method.identifier, exp));
         }
       });
 
-      doBody.push(b.localStatement([idBase0], [
-        b.tableConstructorExpression(baseTableKeys),
-      ]));
+      doBody.push(
+        b.localStatement(
+          [idBase0],
+          [b.tableConstructorExpression(baseTableKeys)],
+        ),
+      );
 
       doBody.push(
-        b.assignmentStatement([
-          b.memberExpression(idBase0, '.', b.identifier('__index')),
-        ], [idBase0]),
+        b.assignmentStatement(
+          [b.memberExpression(idBase0, ".", b.identifier("__index"))],
+          [idBase0],
+        ),
       );
 
       if (parent) {
@@ -558,7 +558,7 @@ var compileStatement = function (statement) {
               idSetMetaTable,
               [
                 idBase0,
-                b.memberExpression(idParent0, '.', b.identifier('__index')),
+                b.memberExpression(idParent0, ".", b.identifier("__index")),
               ],
               [idBase0],
             ),
@@ -566,12 +566,15 @@ var compileStatement = function (statement) {
         );
       }
 
-      var varargLiteral = b.varargLiteral('...', '...');
-      var constructorArgs = statement.constructor ? statement.constructor.parameters : [];
+      var varargLiteral = b.varargLiteral("...", "...");
+      var constructorArgs = statement.constructor
+        ? statement.constructor.parameters
+        : [];
       constructorArgs.unshift(idSelf);
 
       var constructorBody = statement.constructor
-        ? statement.constructor.body : [];
+        ? statement.constructor.body
+        : [];
 
       /*
       _.each(constructorBody, (constructorStatement, index) => {
@@ -592,100 +595,81 @@ var compileStatement = function (statement) {
       });
       */
 
-      var idSelf0 = b.identifier('_self_0', true);
-      var idCls = b.identifier('cls', true);
+      var idSelf0 = b.identifier("_self_0", true);
+      var idCls = b.identifier("cls", true);
       var clsIndex;
       var clsTable = [
         b.tableKeyString(
-          b.identifier('__init'),
+          b.identifier("__init"),
           compileFunctionStatement(
             attachLocations(
               statement.constructor,
-              b.functionExpression(
-                constructorArgs,
-                true,
-                constructorBody,
-              ),
+              b.functionExpression(constructorArgs, true, constructorBody),
             ),
           ),
         ),
+        b.tableKeyString(b.identifier("__base"), idBase0),
         b.tableKeyString(
-          b.identifier('__base'),
-          idBase0,
-        ),
-        b.tableKeyString(
-          b.identifier('__name'),
+          b.identifier("__name"),
           b.stringLiteral(strName, `"${strName}"`),
         ),
       ];
 
       if (parent) {
-        const idParent = b.identifier('parent', true);
-        const idName = b.identifier('parent', true);
-        const idVal = b.identifier('val', true);
+        const idParent = b.identifier("parent", true);
+        const idName = b.identifier("parent", true);
+        const idVal = b.identifier("val", true);
         clsIndex = b.functionExpression([idCls, idName], true, [
-          b.localStatement([idVal], [
-            b.callExpression(b.identifier('rawget'), [idBase0, idName]),
-          ]),
+          b.localStatement(
+            [idVal],
+            [b.callExpression(b.identifier("rawget"), [idBase0, idName])],
+          ),
           b.ifStatement([
             b.ifClause(
-              b.binaryExpression(
-                '==',
-                idVal,
-                b.nilLiteral(null, 'nil'),
-              ),
+              b.binaryExpression("==", idVal, b.nilLiteral(null, "nil")),
               [
-                b.localStatement([idParent], [
-                  b.callExpression(b.identifier('rawget'), [
-                    idCls,
-                    b.stringLiteral('__parent', '"__parent"'),
-                  ]),
-                ]),
+                b.localStatement(
+                  [idParent],
+                  [
+                    b.callExpression(b.identifier("rawget"), [
+                      idCls,
+                      b.stringLiteral("__parent", '"__parent"'),
+                    ]),
+                  ],
+                ),
                 b.ifStatement([
                   b.ifClause(idParent, [
-                    b.returnStatement([
-                      b.indexExpression(idParent, idName),
-                    ]),
+                    b.returnStatement([b.indexExpression(idParent, idName)]),
                   ]),
                 ]),
               ],
             ),
-            b.elseClause([
-              b.returnStatement([idVal]),
-            ]),
+            b.elseClause([b.returnStatement([idVal])]),
           ]),
         ]);
 
-        clsTable.push(
-          b.tableKeyString(
-            b.identifier('__parent'),
-            idParent0,
-          ),
-        );
+        clsTable.push(b.tableKeyString(b.identifier("__parent"), idParent0));
       } else {
         clsIndex = idBase0;
       }
 
       _.each(staticMembers, (member) => {
-        clsTable.push(
-          b.tableKeyString(
-            member.identifier,
-            member.expression,
-          ),
-        );
+        clsTable.push(b.tableKeyString(member.identifier, member.expression));
       });
 
       var callBody = [
         b.localStatement(
           [idSelf0],
-          [b.callExpression(
-            idSetMetaTable,
-            [b.tableConstructorExpression([]), idBase0],
-          )],
+          [
+            b.callExpression(idSetMetaTable, [
+              b.tableConstructorExpression([]),
+              idBase0,
+            ]),
+          ],
         ),
         b.callStatement(
           b.callExpression(
-            b.memberExpression(idCls, '.', b.identifier('__init')),
+            b.memberExpression(idCls, ".", b.identifier("__init")),
             [idSelf0, varargLiteral],
           ),
         ),
@@ -696,22 +680,16 @@ var compileStatement = function (statement) {
         b.assignmentStatement(
           [idClass0],
           [
-            b.callExpression(
-              idSetMetaTable,
-              [
-                b.tableConstructorExpression(clsTable),
-                b.tableConstructorExpression([
-                  b.tableKeyString(b.identifier('__index'), clsIndex),
-                  b.tableKeyString(
-                    b.identifier('__call'),
-                    b.functionExpression([
-                      idCls,
-                      varargLiteral,
-                    ], true, callBody),
-                  ),
-                ]),
-              ],
-            ),
+            b.callExpression(idSetMetaTable, [
+              b.tableConstructorExpression(clsTable),
+              b.tableConstructorExpression([
+                b.tableKeyString(b.identifier("__index"), clsIndex),
+                b.tableKeyString(
+                  b.identifier("__call"),
+                  b.functionExpression([idCls, varargLiteral], true, callBody),
+                ),
+              ]),
+            ]),
           ],
         ),
       );
@@ -721,11 +699,15 @@ var compileStatement = function (statement) {
           b.ifStatement(
             [
               b.ifClause(
-                b.memberExpression(idParent0, '.', b.identifier('__inherited')),
+                b.memberExpression(idParent0, ".", b.identifier("__inherited")),
                 [
                   b.callStatement(
                     b.callExpression(
-                      b.memberExpression(idParent0, '.', b.identifier('__inherited')),
+                      b.memberExpression(
+                        idParent0,
+                        ".",
+                        b.identifier("__inherited"),
+                      ),
                       [idParent0, idClass0],
                     ),
                   ),
@@ -737,20 +719,16 @@ var compileStatement = function (statement) {
         );
       }
 
-      doBody.push(
-        b.assignmentStatement(
-          [statement.identifier],
-          [idClass0],
-        ),
-      );
+      doBody.push(b.assignmentStatement([statement.identifier], [idClass0]));
 
       body.push(b.doStatement(doBody));
 
       currentClass = prevClass;
       return body;
 
-    case 'SuperCallStatement':
-      if (!currentClass) throw 'Tried to compile SuperCallExpression without class reference.';
+    case "SuperCallStatement":
+      if (!currentClass)
+        throw "Tried to compile SuperCallExpression without class reference.";
 
       var list = [];
 
@@ -763,11 +741,10 @@ var compileStatement = function (statement) {
 
       _.each(currentClass.members, (member) => {
         list.push(
-          b.assignmentStatement([
-            b.memberExpression(b.selfExpression(), '.', member.identifier),
-          ], [
-            compileExpression(member.expression),
-          ]),
+          b.assignmentStatement(
+            [b.memberExpression(b.selfExpression(), ".", member.identifier)],
+            [compileExpression(member.expression)],
+          ),
         );
       });
 
@@ -790,11 +767,12 @@ var compileExpression = function (expression) {
   const { type } = expression;
 
   switch (type) {
-    case 'LogicalExpression': case 'BinaryExpression':
+    case "LogicalExpression":
+    case "BinaryExpression":
       var { operator } = expression;
-      if (operator == '!=') operator = '~=';
-      else if (operator == '||') operator = 'or';
-      else if (operator == '&&') operator = 'and';
+      if (operator == "!=") operator = "~=";
+      else if (operator == "||") operator = "or";
+      else if (operator == "&&") operator = "and";
 
       return attachLocations(
         expression,
@@ -805,32 +783,26 @@ var compileExpression = function (expression) {
         ),
       );
 
-    case 'UnaryExpression':
+    case "UnaryExpression":
       var { operator } = expression;
-      if (operator == '!') operator = 'not';
+      if (operator == "!") operator = "not";
 
       return attachLocations(
         expression,
-        b.unaryExpression(
-          operator,
-          compileExpression(expression.argument),
-        ),
+        b.unaryExpression(operator, compileExpression(expression.argument)),
       );
 
-    case 'CallExpression':
+    case "CallExpression":
       var args = _.map(expression.arguments, (arg) => compileExpression(arg));
 
       var result = attachLocations(
         expression,
-        b.callExpression(
-          compileExpression(expression.base),
-          args,
-        ),
+        b.callExpression(compileExpression(expression.base), args),
       );
 
       return result;
 
-    case 'TableCallExpression':
+    case "TableCallExpression":
       return attachLocations(
         expression,
         b.tableCallExpression(
@@ -839,7 +811,7 @@ var compileExpression = function (expression) {
         ),
       );
 
-    case 'StringCallExpression':
+    case "StringCallExpression":
       return attachLocations(
         expression,
         b.stringCallExpression(
@@ -848,7 +820,7 @@ var compileExpression = function (expression) {
         ),
       );
 
-    case 'IndexExpression':
+    case "IndexExpression":
       return attachLocations(
         expression,
         b.indexExpression(
@@ -857,7 +829,7 @@ var compileExpression = function (expression) {
         ),
       );
 
-    case 'MemberExpression':
+    case "MemberExpression":
       return attachLocations(
         expression,
         b.memberExpression(
@@ -867,58 +839,52 @@ var compileExpression = function (expression) {
         ),
       );
 
-    case 'SafeMemberExpression':
+    case "SafeMemberExpression":
       return compileSafeMemberExpression(expression);
 
-    case 'FunctionDeclaration':
+    case "FunctionDeclaration":
       return compileFunctionStatement(expression);
 
-    case 'FatArrowDeclaration': case 'ThinArrowDeclaration':
+    case "FatArrowDeclaration":
+    case "ThinArrowDeclaration":
       return compileFunctionStatement(
         attachLocations(
           expression,
-          b.functionExpression(
-            expression.parameters,
-            true,
-            expression.body,
-          ),
+          b.functionExpression(expression.parameters, true, expression.body),
         ),
       );
 
-    case 'TemplateStringLiteral':
+    case "TemplateStringLiteral":
       var { expressions } = expression;
       if (expressions.length) {
         let bin = expressions[expressions.length - 1];
 
-        if (bin.type != 'StringLiteral') {
-          bin = b.callExpression(b.identifier('tostring'), [bin]);
+        if (bin.type != "StringLiteral") {
+          bin = b.callExpression(b.identifier("tostring"), [bin]);
         }
 
         for (let i = expressions.length - 2; i >= 0; i--) {
           let exp = expressions[i];
 
-          if (exp.type != 'StringLiteral') {
-            exp = b.callExpression(b.identifier('tostring'), [exp]);
+          if (exp.type != "StringLiteral") {
+            exp = b.callExpression(b.identifier("tostring"), [exp]);
           }
 
-          bin = b.binaryExpression('..', exp, bin);
+          bin = b.binaryExpression("..", exp, bin);
         }
 
         return bin;
       }
 
-      return attachLocations(
-        expression,
-        b.stringLiteral('', '""'),
-      );
+      return attachLocations(expression, b.stringLiteral("", '""'));
 
-    case 'TableConstructorExpression':
+    case "TableConstructorExpression":
       var fields = [];
       var spreaders = [];
       _.each(expression.fields, (field, index) => {
         const compiled = compileExpression(field);
 
-        if (field.type == 'TableSpreadExpression') {
+        if (field.type == "TableSpreadExpression") {
           spreaders.push({
             index,
             field: compiled,
@@ -937,9 +903,11 @@ var compileExpression = function (expression) {
         _.each(spreaders, (sp) => {
           const subFields = fields.slice(lastIndex, sp.index);
           if (subFields.length > 0) {
-            args.push(b.tableConstructorExpression([
-              ...fields.slice(lastIndex, sp.index),
-            ]));
+            args.push(
+              b.tableConstructorExpression([
+                ...fields.slice(lastIndex, sp.index),
+              ]),
+            );
           }
 
           args.push(sp.field);
@@ -948,26 +916,18 @@ var compileExpression = function (expression) {
 
         const lastSubFields = fields.slice(lastIndex);
         if (lastSubFields.length > 0) {
-          args.push(b.tableConstructorExpression([
-            ...lastSubFields,
-          ]));
+          args.push(b.tableConstructorExpression([...lastSubFields]));
         }
 
         return attachLocations(
           expression,
-          b.callExpression(
-            getUtilityFunctionIdentifier('concat'),
-            args,
-          ),
+          b.callExpression(getUtilityFunctionIdentifier("concat"), args),
         );
       }
 
-      return attachLocations(
-        expression,
-        b.tableConstructorExpression(fields),
-      );
+      return attachLocations(expression, b.tableConstructorExpression(fields));
 
-    case 'TableKeyString':
+    case "TableKeyString":
       return attachLocations(
         expression,
         b.tableKeyString(
@@ -976,7 +936,7 @@ var compileExpression = function (expression) {
         ),
       );
 
-    case 'TableKey':
+    case "TableKey":
       return attachLocations(
         expression,
         b.tableKey(
@@ -985,37 +945,32 @@ var compileExpression = function (expression) {
         ),
       );
 
-    case 'TableValue':
+    case "TableValue":
       return attachLocations(
         expression,
-        b.tableValue(
-          compileExpression(expression.value),
-        ),
+        b.tableValue(compileExpression(expression.value)),
       );
 
-    case 'SuperExpression':
+    case "SuperExpression":
       var id = currentClass.identifier;
       return attachLocations(
         expression,
-        b.memberExpression(
-          id,
-          '.',
-          b.identifier('__parent'),
-        ),
+        b.memberExpression(id, ".", b.identifier("__parent")),
       );
 
-    case 'SuperCallExpression':
-      if (!currentClass) throw 'Tried to compile SuperCallExpression without class reference.';
+    case "SuperCallExpression":
+      if (!currentClass)
+        throw "Tried to compile SuperCallExpression without class reference.";
 
       var id = currentClass.identifier;
       var base;
-      if (expression.base.type == 'SuperExpression') {
+      if (expression.base.type == "SuperExpression") {
         base = attachLocations(
           expression.base,
           b.memberExpression(
             compileExpression(expression.base),
-            '.',
-            b.identifier('__init'),
+            ".",
+            b.identifier("__init"),
           ),
         );
       } else {
@@ -1028,49 +983,37 @@ var compileExpression = function (expression) {
 
       return attachLocations(
         expression,
-        b.callExpression(
-          compileExpression(base),
-          args,
-        ),
+        b.callExpression(compileExpression(base), args),
       );
 
-    case 'SuperStringCallExpression':
+    case "SuperStringCallExpression":
       return attachLocations(
         expression,
         compileExpression(
-          b.superCallExpression(
-            expression.base,
-            [expression.argument],
-          ),
+          b.superCallExpression(expression.base, [expression.argument]),
         ),
       );
 
-    case 'SuperTableCallExpression':
+    case "SuperTableCallExpression":
       return attachLocations(
         expression,
         compileExpression(
-          b.superCallExpression(
-            expression.base,
-            [expression.arguments],
-          ),
+          b.superCallExpression(expression.base, [expression.arguments]),
         ),
       );
 
-    case 'TableSpreadExpression':
-      getUtilityFunctionIdentifier('concat');
+    case "TableSpreadExpression":
+      getUtilityFunctionIdentifier("concat");
 
       return expression.expression;
 
-    case 'SpreadExpression':
-      getUtilityFunctionIdentifier('concat');
+    case "SpreadExpression":
+      getUtilityFunctionIdentifier("concat");
 
       return attachLocations(
         expression,
         compileExpression(
-          b.callExpression(
-            b.identifier('unpack'),
-            [expression.expression],
-          ),
+          b.callExpression(b.identifier("unpack"), [expression.expression]),
         ),
       );
 
@@ -1092,47 +1035,45 @@ function compileFunctionStatement(statement) {
   let body = debugWrapScope(statement, compileStatementList(statement.body));
 
   const typeChecks = [];
-  _.each(statement.parameters, ((param) => {
+  _.each(statement.parameters, (param) => {
     if (param.typeCheck) {
-      let name = '';
-      function constructName(obj, separator = '', postFix = '') {
-        if (obj.type == 'Identifier') {
+      let name = "";
+      function constructName(obj, separator = "", postFix = "") {
+        if (obj.type == "Identifier") {
           name += `${separator}${obj.name}${postFix}`;
-        } else if (obj.type == 'BinaryExpression') {
-          if (name == '') {
+        } else if (obj.type == "BinaryExpression") {
+          if (name == "") {
             constructName(obj.left);
           }
 
-          constructName(obj.right, '|');
-        } else if (obj.type == 'MemberExpression') {
-          constructName(obj.base, `${name == '' ? '' : '|'}`);
+          constructName(obj.right, "|");
+        } else if (obj.type == "MemberExpression") {
+          constructName(obj.base, `${name == "" ? "" : "|"}`);
 
-          constructName(obj.identifier, '.', '');
+          constructName(obj.identifier, ".", "");
         }
       }
       constructName(param.typeCheck);
 
-      const types = name.split('|');
-      const typeName = '__laux_type';
+      const types = name.split("|");
+      const typeName = "__laux_type";
       const andExpression = b.logicalExpression(
-        'and',
+        "and",
         b.logicalExpression(
-          'and',
-          b.callExpression(b.identifier('istable'), [
-            b.identifier(param.name),
-          ]),
+          "and",
+          b.callExpression(b.identifier("istable"), [b.identifier(param.name)]),
           b.memberExpression(
             b.identifier(param.name),
-            '.',
-            b.identifier('__type'),
+            ".",
+            b.identifier("__type"),
           ),
         ),
         b.callStatement(
           b.callExpression(
             b.memberExpression(
               b.identifier(param.name),
-              ':',
-              b.identifier('__type'),
+              ":",
+              b.identifier("__type"),
             ),
           ),
         ),
@@ -1144,29 +1085,28 @@ function compileFunctionStatement(statement) {
         [b.identifier(typeName)],
         [
           b.logicalExpression(
-            'or',
+            "or",
             andExpression,
             b.callStatement(
-              b.callExpression(
-                b.identifier('type'),
-                [b.identifier(param.name)],
-              ),
+              b.callExpression(b.identifier("type"), [
+                b.identifier(param.name),
+              ]),
             ),
           ),
         ],
       );
 
       let compareParam = b.logicalExpression(
-        '==',
+        "==",
         b.identifier(typeName),
         b.stringLiteral(types[0], `"${types[0]}"`),
       );
       for (let i = 1; i < types.length; i++) {
         compareParam = b.logicalExpression(
-          'or',
+          "or",
           compareParam,
           b.logicalExpression(
-            '==',
+            "==",
             b.identifier(typeName),
             b.stringLiteral(types[i], `"${types[i]}"`),
           ),
@@ -1175,19 +1115,19 @@ function compileFunctionStatement(statement) {
 
       const assertFailMsg = `Expected parameter \`${param.name}\` to be type \`${name}\``;
       const call = b.callStatement(
-        b.callExpression(
-          b.identifier('assert'),
-          [
-            compareParam,
-            b.stringLiteral(assertFailMsg, `"${assertFailMsg} instead of \`" .. ${typeName} .. "\`"`),
-          ],
-        ),
+        b.callExpression(b.identifier("assert"), [
+          compareParam,
+          b.stringLiteral(
+            assertFailMsg,
+            `"${assertFailMsg} instead of \`" .. ${typeName} .. "\`"`,
+          ),
+        ]),
       );
 
       typeChecks.push(typeVar);
       typeChecks.push(call);
     }
-  }));
+  });
 
   if (typeChecks.length) {
     node.body.unshift.apply(node.body, typeChecks);
@@ -1202,9 +1142,9 @@ function compileFunctionStatement(statement) {
         [compileExpression(param.defaultValue)],
       );
       const ifCondition = b.binaryExpression(
-        '==',
+        "==",
         compileExpression(param),
-        b.nilLiteral(null, 'nil'),
+        b.nilLiteral(null, "nil"),
       );
       const ifClause = b.ifClause(ifCondition, [ifBody]);
       const ifStatement = b.ifStatement([ifClause]);
@@ -1243,9 +1183,9 @@ function compileSafeMemberExpression(expression) {
 
   let exp = expression;
   while (exp) {
-    if (exp.type == 'Identifier') {
+    if (exp.type == "Identifier") {
       bases.unshift(compileExpression(exp));
-    } else if (exp.type != 'SafeMemberExpression') {
+    } else if (exp.type != "SafeMemberExpression") {
       bases.unshift(compileExpression(exp));
       break;
     }
@@ -1261,19 +1201,15 @@ function compileSafeMemberExpression(expression) {
     const next = bases[i + 1];
 
     if (!memExp) {
-      memExp = b.memberExpression(base, '.', next);
+      memExp = b.memberExpression(base, ".", next);
     } else {
-      memExp = b.memberExpression(memExp, '.', next);
+      memExp = b.memberExpression(memExp, ".", next);
     }
   }
 
   const logicalExp = attachLocations(
     expression,
-    b.binaryExpression(
-      'and',
-      compileExpression(expression.base),
-      memExp,
-    ),
+    b.binaryExpression("and", compileExpression(expression.base), memExp),
   );
   logicalExp.inParens = true;
 
@@ -1290,665 +1226,647 @@ const compiler = {
 
     const state = { num: 0 };
 
-    traverse(ast, {
-      MutationStatement(path) {
-        const { node } = path;
+    traverse(
+      ast,
+      {
+        MutationStatement(path) {
+          const { node } = path;
 
-        node.value.inParens = true;
-
-        path.replaceWith(
-          b.assignmentStatement(
-            [node.expression],
-            [
-              b.binaryExpression(
-                node.sign,
-                node.expression,
-                node.value,
-              ),
-            ],
-          ),
-        );
-      },
-
-      TemplateStringLiteral(path) {
-        const { node } = path;
-
-        const { expressions } = node;
-        if (expressions.length) {
-          let bin = expressions[expressions.length - 1];
-
-          if (bin.type != 'StringLiteral') {
-            bin = b.callExpression(b.identifier('tostring'), [bin]);
-          }
-
-          for (let i = expressions.length - 2; i >= 0; i--) {
-            let exp = expressions[i];
-
-            if (exp.type != 'StringLiteral') {
-              exp = b.callExpression(b.identifier('tostring'), [exp]);
-            }
-
-            bin = b.binaryExpression('..', exp, bin);
-          }
-
-          path.replaceWith(bin);
-          return;
-        }
-
-        path.replaceWith(
-          b.stringLiteral('', '""'),
-        );
-      },
-
-      SpreadExpression(path) {
-        const { node } = path;
-
-        path.replaceWith(
-          b.callExpression(b.identifier('unpack'), [node.expression]),
-        );
-      },
-
-      TableSpreadExpression(path) {
-        path.replaceWith(path.node.expression);
-      },
-
-      TableConstructorExpression(path) {
-        const { node } = path;
-
-        const fields = [];
-        const spreaders = [];
-        _.each(node.fields, (field, index) => {
-          if (field.type == 'TableSpreadExpression') {
-            spreaders.push({
-              index,
-              field,
-            });
-          }
-
-          fields.push(field);
-        });
-
-        if (spreaders.length > 0) {
-          const groups = [];
-
-          const args = [];
-
-          let lastIndex = 0;
-          _.each(spreaders, (sp) => {
-            const subFields = fields.slice(lastIndex, sp.index);
-            if (subFields.length > 0) {
-              args.push(b.tableConstructorExpression([
-                ...fields.slice(lastIndex, sp.index),
-              ]));
-            }
-
-            args.push(sp.field);
-            lastIndex = sp.index + 1;
-          });
-
-          const lastSubFields = fields.slice(lastIndex);
-          if (lastSubFields.length > 0) {
-            args.push(b.tableConstructorExpression([
-              ...lastSubFields,
-            ]));
-          }
+          node.value.inParens = true;
 
           path.replaceWith(
-            b.callExpression(
-              getUtilityFunctionIdentifier('concat'),
-              args,
+            b.assignmentStatement(
+              [node.expression],
+              [b.binaryExpression(node.sign, node.expression, node.value)],
             ),
           );
-        }
-      },
+        },
 
-      'FunctionDeclaration|FunctionExpression|FatArrowExpression|ThinArrowExpression': function (path) {
-        const { node } = path;
-        const typeChecks = [];
-        _.each(node.parameters, ((param) => {
-          if (param.typeCheck) {
-            let name = '';
-            function constructName(obj, separator = '', postFix = '') {
-              if (obj.type == 'Identifier') {
-                name += `${separator}${obj.name}${postFix}`;
-              } else if (obj.type == 'BinaryExpression') {
-                if (name == '') {
-                  constructName(obj.left);
-                }
+        TemplateStringLiteral(path) {
+          const { node } = path;
 
-                constructName(obj.right, '|');
-              } else if (obj.type == 'MemberExpression') {
-                constructName(obj.base, `${name == '' ? '' : '|'}`);
+          const { expressions } = node;
+          if (expressions.length) {
+            let bin = expressions[expressions.length - 1];
 
-                constructName(obj.identifier, '.', '');
-              }
+            if (bin.type != "StringLiteral") {
+              bin = b.callExpression(b.identifier("tostring"), [bin]);
             }
-            constructName(param.typeCheck);
 
-            const types = name.split('|');
-            const typeName = '__laux_type';
-            const andExpression = b.logicalExpression(
-              'and',
-              b.logicalExpression(
-                'and',
-                b.callExpression(b.identifier('istable'), [
-                  b.identifier(param.name),
-                ]),
-                b.memberExpression(
-                  b.identifier(param.name),
-                  '.',
-                  b.identifier('__type'),
-                ),
-              ),
-              b.callStatement(
-                b.callExpression(
-                  b.memberExpression(
-                    b.identifier(param.name),
-                    ':',
-                    b.identifier('__type'),
-                  ),
-                ),
-              ),
+            for (let i = expressions.length - 2; i >= 0; i--) {
+              let exp = expressions[i];
+
+              if (exp.type != "StringLiteral") {
+                exp = b.callExpression(b.identifier("tostring"), [exp]);
+              }
+
+              bin = b.binaryExpression("..", exp, bin);
+            }
+
+            path.replaceWith(bin);
+            return;
+          }
+
+          path.replaceWith(b.stringLiteral("", '""'));
+        },
+
+        SpreadExpression(path) {
+          const { node } = path;
+
+          path.replaceWith(
+            b.callExpression(b.identifier("unpack"), [node.expression]),
+          );
+        },
+
+        TableSpreadExpression(path) {
+          path.replaceWith(path.node.expression);
+        },
+
+        TableConstructorExpression(path) {
+          const { node } = path;
+
+          const fields = [];
+          const spreaders = [];
+          _.each(node.fields, (field, index) => {
+            if (field.type == "TableSpreadExpression") {
+              spreaders.push({
+                index,
+                field,
+              });
+            }
+
+            fields.push(field);
+          });
+
+          if (spreaders.length > 0) {
+            const groups = [];
+
+            const args = [];
+
+            let lastIndex = 0;
+            _.each(spreaders, (sp) => {
+              const subFields = fields.slice(lastIndex, sp.index);
+              if (subFields.length > 0) {
+                args.push(
+                  b.tableConstructorExpression([
+                    ...fields.slice(lastIndex, sp.index),
+                  ]),
+                );
+              }
+
+              args.push(sp.field);
+              lastIndex = sp.index + 1;
+            });
+
+            const lastSubFields = fields.slice(lastIndex);
+            if (lastSubFields.length > 0) {
+              args.push(b.tableConstructorExpression([...lastSubFields]));
+            }
+
+            path.replaceWith(
+              b.callExpression(getUtilityFunctionIdentifier("concat"), args),
             );
-            andExpression.inParens = true;
+          }
+        },
 
-            const type = name;
-            const typeVar = b.localStatement(
-              [b.identifier(typeName)],
-              [
-                b.logicalExpression(
-                  'or',
-                  andExpression,
-                  b.callStatement(
-                    b.callExpression(
-                      b.identifier('type'),
-                      [b.identifier(param.name)],
+        "FunctionDeclaration|FunctionExpression|FatArrowExpression|ThinArrowExpression":
+          function (path) {
+            const { node } = path;
+            const typeChecks = [];
+            _.each(node.parameters, (param) => {
+              if (param.typeCheck) {
+                let name = "";
+                function constructName(obj, separator = "", postFix = "") {
+                  if (obj.type == "Identifier") {
+                    name += `${separator}${obj.name}${postFix}`;
+                  } else if (obj.type == "BinaryExpression") {
+                    if (name == "") {
+                      constructName(obj.left);
+                    }
+
+                    constructName(obj.right, "|");
+                  } else if (obj.type == "MemberExpression") {
+                    constructName(obj.base, `${name == "" ? "" : "|"}`);
+
+                    constructName(obj.identifier, ".", "");
+                  }
+                }
+                constructName(param.typeCheck);
+
+                const types = name.split("|");
+                const typeName = "__laux_type";
+                const andExpression = b.logicalExpression(
+                  "and",
+                  b.logicalExpression(
+                    "and",
+                    b.callExpression(b.identifier("istable"), [
+                      b.identifier(param.name),
+                    ]),
+                    b.memberExpression(
+                      b.identifier(param.name),
+                      ".",
+                      b.identifier("__type"),
                     ),
                   ),
-                ),
-              ],
-            );
+                  b.callStatement(
+                    b.callExpression(
+                      b.memberExpression(
+                        b.identifier(param.name),
+                        ":",
+                        b.identifier("__type"),
+                      ),
+                    ),
+                  ),
+                );
+                andExpression.inParens = true;
 
-            let compareParam = b.logicalExpression(
-              '==',
-              b.identifier(typeName),
-              b.stringLiteral(types[0], `"${types[0]}"`),
-            );
-            for (let i = 1; i < types.length; i++) {
-              compareParam = b.logicalExpression(
-                'or',
-                compareParam,
-                b.logicalExpression(
-                  '==',
+                const type = name;
+                const typeVar = b.localStatement(
+                  [b.identifier(typeName)],
+                  [
+                    b.logicalExpression(
+                      "or",
+                      andExpression,
+                      b.callStatement(
+                        b.callExpression(b.identifier("type"), [
+                          b.identifier(param.name),
+                        ]),
+                      ),
+                    ),
+                  ],
+                );
+
+                let compareParam = b.logicalExpression(
+                  "==",
                   b.identifier(typeName),
-                  b.stringLiteral(types[i], `"${types[i]}"`),
+                  b.stringLiteral(types[0], `"${types[0]}"`),
+                );
+                for (let i = 1; i < types.length; i++) {
+                  compareParam = b.logicalExpression(
+                    "or",
+                    compareParam,
+                    b.logicalExpression(
+                      "==",
+                      b.identifier(typeName),
+                      b.stringLiteral(types[i], `"${types[i]}"`),
+                    ),
+                  );
+                }
+
+                const assertFailMsg = `Expected parameter \`${param.name}\` to be type \`${name}\``;
+                const call = b.callStatement(
+                  b.callExpression(b.identifier("assert"), [
+                    compareParam,
+                    b.stringLiteral(
+                      assertFailMsg,
+                      `"${assertFailMsg} instead of \`" .. ${typeName} .. "\`"`,
+                    ),
+                  ]),
+                );
+
+                typeChecks.push(typeVar);
+                typeChecks.push(call);
+              }
+            });
+
+            if (typeChecks.length) {
+              node.body.unshift.apply(node.body, typeChecks);
+            }
+            const defaultValues = [];
+
+            _.each(node.parameters, (param) => {
+              if (param.defaultValue) {
+                const ifBody = b.assignmentStatement(
+                  [param],
+                  [param.defaultValue],
+                );
+                const ifCondition = b.binaryExpression(
+                  "==",
+                  param,
+                  b.nilLiteral(null, "nil"),
+                );
+
+                const ifClause = b.ifClause(ifCondition, [ifBody]);
+                const ifStatement = b.ifStatement([ifClause]);
+
+                defaultValues.push(ifStatement);
+              }
+            });
+
+            if (defaultValues.length) {
+              node.body.unshift.apply(node.body, defaultValues);
+            }
+
+            if (node.async) {
+              const uniqueIdentifier = generateLAUIdentifier(
+                undefined,
+                undefined,
+                "promise",
+              );
+              const existingReturn = [];
+              let foundAt = -1;
+              for (let i = 0; i < node.body.length && foundAt === -1; i++) {
+                const entry = node.body[i];
+                if (entry.type !== "ReturnStatement") continue;
+
+                for (const argument of entry.arguments) {
+                  existingReturn.push(argument);
+                }
+                foundAt = i;
+              }
+
+              if (node.blockAsync) {
+                const insertNode = b.returnStatement([
+                  b.callExpression(
+                    b.memberExpression(
+                      uniqueIdentifier,
+                      ":",
+                      b.identifier("resolve"),
+                    ),
+                    existingReturn,
+                  ),
+                ]);
+
+                if (foundAt !== -1) {
+                  node.body[foundAt] = insertNode;
+                } else {
+                  node.body.push.apply(node.body, [insertNode]);
+                }
+
+                const promiseInit = b.localStatement(
+                  [uniqueIdentifier],
+                  [
+                    b.callExpression(
+                      b.memberExpression(
+                        b.identifier("AtlasUI"),
+                        ".",
+                        b.memberExpression(
+                          b.identifier("Promises"),
+                          ".",
+                          b.identifier("new"),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+                node.body.unshift.apply(node.body, [promiseInit]);
+                const promiseReturn = b.returnStatement([uniqueIdentifier]);
+                promiseReturn.asyncBlockReturn = true;
+                // node.body.push.apply(node.body, [ promiseReturn ]);
+              }
+            }
+
+            if (node.decorators) {
+              path.insertAfter(
+                b.assignmentStatement(
+                  [safeIndexer(node.identifier)],
+                  [
+                    b.callExpression(node.decorators[0], [
+                      safeIndexer(node.identifier),
+                    ]),
+                  ],
                 ),
               );
             }
+          },
 
-            const assertFailMsg = `Expected parameter \`${param.name}\` to be type \`${name}\``;
-            const call = b.callStatement(
-              b.callExpression(
-                b.identifier('assert'),
-                [
-                  compareParam,
-                  b.stringLiteral(assertFailMsg, `"${assertFailMsg} instead of \`" .. ${typeName} .. "\`"`),
-                ],
-              ),
-            );
+        LocalDestructorStatement(path) {
+          const { node } = path;
+          const { init } = node;
 
-            typeChecks.push(typeVar);
-            typeChecks.push(call);
-          }
-        }));
+          let identifier;
+          if (init.type != "Identifier") {
+            identifier = generateLAUIdentifier(init.base, true);
+            const local = b.localStatement([identifier], [init]);
 
-        if (typeChecks.length) {
-          node.body.unshift.apply(node.body, typeChecks);
-        }
-        const defaultValues = [];
-
-        _.each(node.parameters, (param) => {
-          if (param.defaultValue) {
-            const ifBody = b.assignmentStatement(
-              [param],
-              [param.defaultValue],
-            );
-            const ifCondition = b.binaryExpression(
-              '==',
-              param,
-              b.nilLiteral(null, 'nil'),
-            );
-
-            const ifClause = b.ifClause(ifCondition, [ifBody]);
-            const ifStatement = b.ifStatement([ifClause]);
-
-            defaultValues.push(ifStatement);
-          }
-        });
-
-        if (defaultValues.length) {
-          node.body.unshift.apply(node.body, defaultValues);
-        }
-
-        if (node.async) {
-          const uniqueIdentifier = generateLAUIdentifier(undefined, undefined, 'promise');
-          const existingReturn = [];
-          let foundAt = -1;
-          for (let i = 0; i < node.body.length && foundAt === -1; i++) {
-            const entry = node.body[i];
-            if (entry.type !== 'ReturnStatement') continue;
-
-            for (const argument of entry.arguments) {
-              existingReturn.push(argument);
-            }
-            foundAt = i;
+            path.insertBefore(local);
           }
 
-          if (node.blockAsync) {
-            const insertNode = b.returnStatement([b.callExpression(
-              b.memberExpression(
-                uniqueIdentifier,
-                ':',
-                b.identifier('resolve'),
-              ),
-              existingReturn,
-            )]);
-
-            if (foundAt !== -1) {
-              node.body[foundAt] = insertNode;
-            } else {
-              node.body.push.apply(node.body, [insertNode]);
-            }
-
-            const promiseInit = b.localStatement(
-              [
-                uniqueIdentifier,
-              ],
-              [
-                b.callExpression(
-                  b.memberExpression(
-                    b.identifier('AtlasUI'),
-                    '.',
-                    b.memberExpression(
-                      b.identifier('Promises'),
-                      '.',
-                      b.identifier('new'),
-                    ),
-                  ),
-                ),
-              ],
-            );
-            node.body.unshift.apply(node.body, [promiseInit]);
-            const promiseReturn = b.returnStatement([
-              uniqueIdentifier,
-            ]);
-            promiseReturn.asyncBlockReturn = true;
-            // node.body.push.apply(node.body, [ promiseReturn ]);
-          }
-        }
-
-        if (node.decorators) {
-          path.insertAfter(
-            b.assignmentStatement(
-              [
-                safeIndexer(node.identifier),
-              ],
-              [
-                b.callExpression(
-                  node.decorators[0],
-                  [safeIndexer(node.identifier)],
-                ),
-              ],
-            ),
-          );
-        }
-      },
-
-      LocalDestructorStatement(path) {
-        const { node } = path;
-        const { init } = node;
-
-        let identifier;
-        if (init.type != 'Identifier') {
-          identifier = generateLAUIdentifier(init.base, true);
-          const local = b.localStatement(
-            [identifier],
-            [init],
+          path.insertBefore(
+            generateAssert(identifier || init, "cannot destructure nil value"),
           );
 
-          path.insertBefore(local);
-        }
+          const newInit = _.map(node.variables, (variable) =>
+            b.memberExpression(identifier || init, ".", variable),
+          );
 
-        path.insertBefore(
-          generateAssert(identifier || init, 'cannot destructure nil value'),
-        );
+          path.replaceWith(b.localStatement(node.variables, newInit));
+        },
 
-        const newInit = _.map(node.variables, (variable) => b.memberExpression(identifier || init, '.', variable));
+        ForOfStatement(path) {
+          const { node } = path;
 
-        path.replaceWith(
-          b.localStatement(node.variables, newInit),
-        );
-      },
+          const iterator = b.callExpression(b.identifier("pairs"), [
+            node.expression,
+          ]);
 
-      ForOfStatement(path) {
-        const { node } = path;
+          path.replaceWith(
+            b.forGenericStatement(node.variables, [iterator], node.body),
+          );
+        },
 
-        const iterator = b.callExpression(
-          b.identifier('pairs'),
-          [node.expression],
-        );
+        SafeMemberExpression(path) {
+          const { node } = path;
 
-        path.replaceWith(
-          b.forGenericStatement(
-            node.variables,
-            [iterator],
-            node.body,
-          ),
-        );
-      },
+          const bases = [];
+          let exp = node;
+          while (exp) {
+            if (exp.type == "Identifier") {
+              bases.unshift(exp);
+            } else if (exp.type != "SafeMemberExpression") {
+              bases.unshift(exp);
+              break;
+            }
 
-      SafeMemberExpression(path) {
-        const { node } = path;
+            if (exp.identifier) {
+              bases.unshift(exp.identifier);
+            }
 
-        const bases = [];
-        let exp = node;
-        while (exp) {
-          if (exp.type == 'Identifier') {
-            bases.unshift(exp);
-          } else if (exp.type != 'SafeMemberExpression') {
-            bases.unshift(exp);
-            break;
+            exp = exp.base;
           }
 
-          if (exp.identifier) {
-            bases.unshift(exp.identifier);
-          }
+          let memExp;
+          for (let i = 0; i < bases.length - 1; i++) {
+            const base = bases[i];
+            const next = bases[i + 1];
+            const exp = !memExp ? base : memExp;
 
-          exp = exp.base;
-        }
-
-        let memExp;
-        for (let i = 0; i < bases.length - 1; i++) {
-          const base = bases[i];
-          const next = bases[i + 1];
-          const exp = !memExp ? base : memExp;
-
-          if (next.type == 'Identifier') {
-            if (next.isLocal == undefined) {
-              memExp = b.memberExpression(exp, '.', next);
+            if (next.type == "Identifier") {
+              if (next.isLocal == undefined) {
+                memExp = b.memberExpression(exp, ".", next);
+              } else {
+                memExp = b.indexExpression(exp, next);
+              }
+            } else if (next.type == "CallExpression") {
+              memExp = b.memberExpression(exp, ":", next);
             } else {
               memExp = b.indexExpression(exp, next);
             }
-          } else if (next.type == 'CallExpression') {
-            memExp = b.memberExpression(exp, ':', next);
-          } else {
-            memExp = b.indexExpression(exp, next);
           }
-        }
 
-        const logicalExp = b.binaryExpression('and', node.base, memExp);
-        logicalExp.inParens = true;
+          const logicalExp = b.binaryExpression("and", node.base, memExp);
+          logicalExp.inParens = true;
 
-        path.replaceWith(logicalExp);
-      },
+          path.replaceWith(logicalExp);
+        },
 
-      ClassStatement(path, state) {
-        path.replaceWithMultiple(
-          new ClassTransformer(path, state).run(),
-        );
-      },
+        ClassStatement(path, state) {
+          path.replaceWithMultiple(new ClassTransformer(path, state).run());
+        },
 
-      // This is HOT garbage
-      AwaitStatement(path) {
-        if (!path.scope.block.async) {
-          throw new Error('Unable to use await outside an async scope');
-        }
+        // This is HOT garbage
+        AwaitStatement(path) {
+          if (!path.scope.block.async) {
+            throw new Error("Unable to use await outside an async scope");
+          }
 
-        const { node } = path;
-        const { parent } = path;
-        let useParent = false;
-        if (parent) {
-          if (parent.type == 'LocalStatement') {
-            parent.init = [];
-            useParent = true;
-          } else if (parent.type == 'AssignmentStatement') {
-            path.parentPath.remove();
-            useParent = true;
-          } else if (parent.type == 'CallExpression') {
-            if (parent.arguments[0].type == 'AwaitStatement') {
-              parent.arguments.shift();
+          const { node } = path;
+          const { parent } = path;
+          let useParent = false;
+          if (parent) {
+            if (parent.type == "LocalStatement") {
+              parent.init = [];
+              useParent = true;
+            } else if (parent.type == "AssignmentStatement") {
+              path.parentPath.remove();
+              useParent = true;
+            } else if (parent.type == "CallExpression") {
+              if (parent.arguments[0].type == "AwaitStatement") {
+                parent.arguments.shift();
+              }
             }
           }
-        }
 
-        const uniqueIdentifier = generateLAUIdentifier(node, true, 'result');
-        const errorIdentifier = generateLAUIdentifier(node, true, 'error');
-        const body = [
-          b.assignmentStatement(
-            [
-              useParent
-                ? b.identifier(parent.variables[0].name)
-                : generateLAUIdentifier(node, true, 'await_var'),
-            ],
-            [uniqueIdentifier],
-          ),
-        ];
-        const funcExp = b.functionExpression([uniqueIdentifier], true, body);
-        const errorExp = b.functionExpression([errorIdentifier], true, [
-          b.callExpression(b.identifier('__laux__replace__me'), [errorIdentifier]),
-        ]);
-        funcExp.async = true;
-        const exp = b.callStatement(
-          b.memberExpression(
-            node.expression,
-            ':',
-            b.callExpression(
-              b.identifier('next'),
+          const uniqueIdentifier = generateLAUIdentifier(node, true, "result");
+          const errorIdentifier = generateLAUIdentifier(node, true, "error");
+          const body = [
+            b.assignmentStatement(
               [
-                funcExp,
-                errorExp,
+                useParent
+                  ? b.identifier(parent.variables[0].name)
+                  : generateLAUIdentifier(node, true, "await_var"),
               ],
+              [uniqueIdentifier],
             ),
-          ),
-        );
-        exp.async = true;
-        exp.isBeingSearchedFor = true;
-        exp.hasErrorAsync = true;
-        path.parentPath.insertAfter(exp);
-
-        const stop = 0;
-        if (stop) return;
-        const len = path.scope.block.body.length;
-        const { block } = path.scope;
-        let oldBody = [];
-        const newBody = [];
-        const maxLen = len - 0;
-        let hasFoundSearchedFor;
-        for (let i = 0; i < maxLen; i++) {
-          const entry = block.body[i];
-          if (!hasFoundSearchedFor) {
-            if (entry.isBeingSearchedFor) {
-              hasFoundSearchedFor = i;
-              delete entry.isBeingSearchedFor;
-            }
-
-            oldBody.push(entry);
-          } else {
-            newBody.push(entry);
-          }
-        }
-
-        let mergeBody;
-        const identifierResolve = path.scope.block.body.slice(maxLen - 1, len)[0].arguments[0].base.base;
-        if (path.scope.block.blockAsync) {
-          mergeBody = path.scope.block.body.slice(maxLen - 1, len);
-          const returnStatement = b.returnStatement([
-            mergeBody[0].arguments[0].base.base,
+          ];
+          const funcExp = b.functionExpression([uniqueIdentifier], true, body);
+          const errorExp = b.functionExpression([errorIdentifier], true, [
+            b.callExpression(b.identifier("__laux__replace__me"), [
+              errorIdentifier,
+            ]),
           ]);
-          returnStatement.isAsyncResolve = true;
-          mergeBody = [returnStatement];
-        } else {
-          mergeBody = path.scope.block.body.slice(maxLen, len);
-        }
+          funcExp.async = true;
+          const exp = b.callStatement(
+            b.memberExpression(
+              node.expression,
+              ":",
+              b.callExpression(b.identifier("next"), [funcExp, errorExp]),
+            ),
+          );
+          exp.async = true;
+          exp.isBeingSearchedFor = true;
+          exp.hasErrorAsync = true;
+          path.parentPath.insertAfter(exp);
 
-        oldBody = [...oldBody, ...mergeBody];
-        path.scope.block.body = oldBody;
-        exp.expression.identifier.arguments[0].body = [
-          ...exp.expression.identifier.arguments[0].body,
-          ...newBody,
-        ];
+          const stop = 0;
+          if (stop) return;
+          const len = path.scope.block.body.length;
+          const { block } = path.scope;
+          let oldBody = [];
+          const newBody = [];
+          const maxLen = len - 0;
+          let hasFoundSearchedFor;
+          for (let i = 0; i < maxLen; i++) {
+            const entry = block.body[i];
+            if (!hasFoundSearchedFor) {
+              if (entry.isBeingSearchedFor) {
+                hasFoundSearchedFor = i;
+                delete entry.isBeingSearchedFor;
+              }
 
-        // Recursively finds all the return and throw statements
-        function findReturnAndThrowStatements(node) {
-          const len = node.length;
-
-          for (let i = 0; i < len; i++) {
-            const exp = node[i];
-
-            const { type } = exp;
-            switch (type) {
-              case 'CallStatement':
-                // await block
-                if (exp.hasErrorAsync) {
-                  const { body } = exp.expression.identifier.arguments[0];
-                  findReturnAndThrowStatements(body);
-                }
-
-                break;
-
-              case 'IfStatement':
-                findReturnAndThrowStatements(exp.clauses);
-
-                break;
-
-              case 'IfClause':
-              case 'ElseifClause':
-              case 'ElseClause':
-                for (let j = 0; j < exp.body.length; j++) {
-                  const clauseExp = exp.body[j];
-                  const { type } = clauseExp;
-                  if (type === 'ReturnStatement') {
-                    const args = [];
-                    if (clauseExp.arguments.length > 1) {
-                      const tableValues = [];
-                      for (const arg of clauseExp.arguments) {
-                        tableValues.push(b.tableValue(arg));
-                      }
-                      args.push(b.tableConstructorExpression(tableValues));
-                    } else {
-                      args.push(...clauseExp.arguments);
-                    }
-
-                    exp.body[j] = b.returnStatement([
-                      b.callExpression(
-                        b.memberExpression(
-                          b.identifier(identifierResolve.name),
-                          ':',
-                          b.identifier('resolve'),
-                        ),
-                        args,
-                      ),
-                    ]);
-                  } else if (type === 'ThrowStatement') {
-                    const args = [];
-                    if (clauseExp.expression.length > 1) {
-                      const tableValues = [];
-                      for (const arg of clauseExp.expression) {
-                        tableValues.push(b.tableValue(arg));
-                      }
-                      args.push(b.tableConstructorExpression(tableValues));
-                    } else {
-                      args.push(...clauseExp.expression);
-                    }
-
-                    exp.body[j] = b.returnStatement([
-                      b.callExpression(
-                        b.memberExpression(
-                          b.identifier(identifierResolve.name),
-                          ':',
-                          b.identifier('reject'),
-                        ),
-                        args,
-                      ),
-                    ]);
-                  }
-                }
-
-                break;
-
-              case 'ThrowStatement':
-                const args = [];
-                if (exp.expression.length > 1) {
-                  const tableValues = [];
-                  for (const arg of exp.expression) {
-                    tableValues.push(b.tableValue(arg));
-                  }
-                  args.push(b.tableConstructorExpression(tableValues));
-                } else {
-                  args.push(...exp.expression);
-                }
-
-                node[i] = b.callExpression(
-                  b.memberExpression(
-                    b.identifier(identifierResolve.name),
-                    ':',
-                    b.identifier('reject'),
-                  ),
-                  args,
-                );
-
-                break;
-
-              case 'ReturnStatement':
-                const firstArgument = exp.arguments[0];
-                // Filter the overall return
-                if (firstArgument.type === 'Identifier'
-                    && firstArgument.name === identifierResolve.name) {
-                  continue;
-                }
-
-                break;
-
-              case 'LocalStatement':
-                const { init } = exp;
-                if (init.length > 0) {
-                  findReturnAndThrowStatements(init);
-                }
-
-                break;
-
-              default:
-
-                break;
+              oldBody.push(entry);
+            } else {
+              newBody.push(entry);
             }
           }
-        }
-        findReturnAndThrowStatements(path.scope.block.body);
 
-        for (let i = 0; i < path.scope.block.body.length; i++) {
-          const entry = path.scope.block.body[i];
-          if (entry.type === 'CallStatement' && entry.hasErrorAsync) {
-            const errorIdentifier = entry.expression.identifier.arguments[1].body[0].arguments[0];
-            entry.expression.identifier.arguments[1].body[0] = b.returnStatement([
-              b.callExpression(
-                b.memberExpression(
-                  b.identifier(identifierResolve.name),
-                  ':',
-                  b.identifier('reject'),
-                ),
-                [errorIdentifier],
-              ),
+          let mergeBody;
+          const identifierResolve = path.scope.block.body.slice(
+            maxLen - 1,
+            len,
+          )[0].arguments[0].base.base;
+          if (path.scope.block.blockAsync) {
+            mergeBody = path.scope.block.body.slice(maxLen - 1, len);
+            const returnStatement = b.returnStatement([
+              mergeBody[0].arguments[0].base.base,
             ]);
+            returnStatement.isAsyncResolve = true;
+            mergeBody = [returnStatement];
+          } else {
+            mergeBody = path.scope.block.body.slice(maxLen, len);
           }
-        }
-      },
 
-      SuperExpression(path) {
-        const { node } = path;
+          oldBody = [...oldBody, ...mergeBody];
+          path.scope.block.body = oldBody;
+          exp.expression.identifier.arguments[0].body = [
+            ...exp.expression.identifier.arguments[0].body,
+            ...newBody,
+          ];
 
-        // console.log("super");
+          // Recursively finds all the return and throw statements
+          function findReturnAndThrowStatements(node) {
+            const len = node.length;
 
-        /*
+            for (let i = 0; i < len; i++) {
+              const exp = node[i];
+
+              const { type } = exp;
+              switch (type) {
+                case "CallStatement":
+                  // await block
+                  if (exp.hasErrorAsync) {
+                    const { body } = exp.expression.identifier.arguments[0];
+                    findReturnAndThrowStatements(body);
+                  }
+
+                  break;
+
+                case "IfStatement":
+                  findReturnAndThrowStatements(exp.clauses);
+
+                  break;
+
+                case "IfClause":
+                case "ElseifClause":
+                case "ElseClause":
+                  for (let j = 0; j < exp.body.length; j++) {
+                    const clauseExp = exp.body[j];
+                    const { type } = clauseExp;
+                    if (type === "ReturnStatement") {
+                      const args = [];
+                      if (clauseExp.arguments.length > 1) {
+                        const tableValues = [];
+                        for (const arg of clauseExp.arguments) {
+                          tableValues.push(b.tableValue(arg));
+                        }
+                        args.push(b.tableConstructorExpression(tableValues));
+                      } else {
+                        args.push(...clauseExp.arguments);
+                      }
+
+                      exp.body[j] = b.returnStatement([
+                        b.callExpression(
+                          b.memberExpression(
+                            b.identifier(identifierResolve.name),
+                            ":",
+                            b.identifier("resolve"),
+                          ),
+                          args,
+                        ),
+                      ]);
+                    } else if (type === "ThrowStatement") {
+                      const args = [];
+                      if (clauseExp.expression.length > 1) {
+                        const tableValues = [];
+                        for (const arg of clauseExp.expression) {
+                          tableValues.push(b.tableValue(arg));
+                        }
+                        args.push(b.tableConstructorExpression(tableValues));
+                      } else {
+                        args.push(...clauseExp.expression);
+                      }
+
+                      exp.body[j] = b.returnStatement([
+                        b.callExpression(
+                          b.memberExpression(
+                            b.identifier(identifierResolve.name),
+                            ":",
+                            b.identifier("reject"),
+                          ),
+                          args,
+                        ),
+                      ]);
+                    }
+                  }
+
+                  break;
+
+                case "ThrowStatement":
+                  const args = [];
+                  if (exp.expression.length > 1) {
+                    const tableValues = [];
+                    for (const arg of exp.expression) {
+                      tableValues.push(b.tableValue(arg));
+                    }
+                    args.push(b.tableConstructorExpression(tableValues));
+                  } else {
+                    args.push(...exp.expression);
+                  }
+
+                  node[i] = b.callExpression(
+                    b.memberExpression(
+                      b.identifier(identifierResolve.name),
+                      ":",
+                      b.identifier("reject"),
+                    ),
+                    args,
+                  );
+
+                  break;
+
+                case "ReturnStatement":
+                  const firstArgument = exp.arguments[0];
+                  // Filter the overall return
+                  if (
+                    firstArgument.type === "Identifier" &&
+                    firstArgument.name === identifierResolve.name
+                  ) {
+                    continue;
+                  }
+
+                  break;
+
+                case "LocalStatement":
+                  const { init } = exp;
+                  if (init.length > 0) {
+                    findReturnAndThrowStatements(init);
+                  }
+
+                  break;
+
+                default:
+                  break;
+              }
+            }
+          }
+          findReturnAndThrowStatements(path.scope.block.body);
+
+          for (let i = 0; i < path.scope.block.body.length; i++) {
+            const entry = path.scope.block.body[i];
+            if (entry.type === "CallStatement" && entry.hasErrorAsync) {
+              const errorIdentifier =
+                entry.expression.identifier.arguments[1].body[0].arguments[0];
+              entry.expression.identifier.arguments[1].body[0] =
+                b.returnStatement([
+                  b.callExpression(
+                    b.memberExpression(
+                      b.identifier(identifierResolve.name),
+                      ":",
+                      b.identifier("reject"),
+                    ),
+                    [errorIdentifier],
+                  ),
+                ]);
+            }
+          }
+        },
+
+        SuperExpression(path) {
+          const { node } = path;
+
+          // console.log("super");
+
+          /*
 
         var id = currentClass.identifier;
         path.replaceWith(
@@ -1960,19 +1878,20 @@ const compiler = {
         );
 
         */
-      },
+        },
 
-      CallExpression(path) {
-        if (path.get('base').node.name == '__dumpscope') {
-          path.scope.dump();
-        }
-        // if (path.type === "Identifier") {
-        // console.log(path.node.name, path.scope.hasBinding(path.node.name));
-        // }
-        // console.log(path.type, path.scope);
+        CallExpression(path) {
+          if (path.get("base").node.name == "__dumpscope") {
+            path.scope.dump();
+          }
+          // if (path.type === "Identifier") {
+          // console.log(path.node.name, path.scope.hasBinding(path.node.name));
+          // }
+          // console.log(path.type, path.scope);
+        },
       },
-
-    }, state);
+      state,
+    );
 
     const utilFuncs = generateUtilityFunctions();
     ast.chunk.body.unshift.apply(ast.chunk.body, utilFuncs);

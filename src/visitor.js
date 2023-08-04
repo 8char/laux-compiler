@@ -1,9 +1,9 @@
-import _ from 'underscore';
-import clone from 'lodash/clone';
-import * as virtualTypes from './virtual-types';
-import * as t from './types';
-import * as cache from './cache';
-import NodePath from './path';
+import _ from "underscore";
+import clone from "lodash/clone";
+import * as virtualTypes from "./virtual-types";
+import * as t from "./types";
+import * as cache from "./cache";
+import NodePath from "./path";
 
 export class TraversalContext {
   visitors;
@@ -79,9 +79,7 @@ export class TraversalContext {
 
   visitSingle(node, key) {
     if (this.shouldVisit(node)) {
-      return this.visitQueue([
-        this.create(node, node, key),
-      ]);
+      return this.visitQueue([this.create(node, node, key)]);
     }
 
     return false;
@@ -97,7 +95,10 @@ export class TraversalContext {
     for (const path of queue) {
       path.resync();
 
-      if (path.contexts.length === 0 || path.contexts[path.contexts.length - 1] !== this) {
+      if (
+        path.contexts.length === 0 ||
+        path.contexts[path.contexts.length - 1] !== this
+      ) {
         path.pushContext(this);
       }
 
@@ -169,11 +170,11 @@ traverse.clearCache.clearPath = cache.clearPath;
 traverse.clearCache.clearScope = cache.clearScope;
 
 function shouldIgnoreKey(key) {
-  if (key[0] === '_') return true;
+  if (key[0] === "_") return true;
 
-  if (key === 'enter' || key === 'exit' || key === 'shouldSkip') return true;
+  if (key === "enter" || key === "exit" || key === "shouldSkip") return true;
 
-  if (key === 'noScope') return true;
+  if (key === "noScope") return true;
 
   return false;
 }
@@ -182,7 +183,7 @@ traverse.explodeVisitors = function (visitors) {
   for (const type in visitors) {
     if (shouldIgnoreKey(type)) continue;
 
-    const parts = type.split('|');
+    const parts = type.split("|");
     if (parts.length === 1) continue;
 
     const fns = visitors[type];
@@ -258,15 +259,17 @@ traverse.ensureEntranceObjects = function (visitor) {
 
     const fns = visitor[key];
 
-    if (typeof fns === 'function') {
+    if (typeof fns === "function") {
       visitor[key] = { enter: fns };
     }
   }
 };
 
 traverse.ensureCallbackArrays = function (visitor) {
-  if (visitor.enter && !Array.isArray(visitor.enter)) visitor.enter = [visitor.enter];
-  if (visitor.exit && !Array.isArray(visitor.exit)) visitor.exit = [visitor.exit];
+  if (visitor.enter && !Array.isArray(visitor.enter))
+    visitor.enter = [visitor.enter];
+  if (visitor.exit && !Array.isArray(visitor.exit))
+    visitor.exit = [visitor.exit];
 };
 
 traverse.wrapCheck = function (wrapper, fn) {

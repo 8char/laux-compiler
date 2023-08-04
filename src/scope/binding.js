@@ -1,13 +1,7 @@
 // import NodePath from "../path";
 
 export default class Binding {
-  constructor({
-    existing,
-    identifier,
-    scope,
-    path,
-    kind,
-  }) {
+  constructor({ existing, identifier, scope, path, kind }) {
     this.identifier = identifier;
     this.scope = scope;
     this.path = path;

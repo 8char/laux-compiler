@@ -1,4 +1,4 @@
-import path from 'path';
+import path from "path";
 
 export default class CacheFile {
   constructor(relativePath) {
@@ -6,11 +6,11 @@ export default class CacheFile {
   }
 
   getCleanPath() {
-    return path.join(this.parse.dir, this.parse.name).replace(/\\/g, '/');
+    return path.join(this.parse.dir, this.parse.name).replace(/\\/g, "/");
   }
 
   getPath() {
-    return path.join(this.parse.dir, this.parse.base).replace(/\\/g, '/');
+    return path.join(this.parse.dir, this.parse.base).replace(/\\/g, "/");
   }
 
   setContent(content) {

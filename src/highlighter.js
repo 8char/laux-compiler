@@ -1,16 +1,18 @@
-import chalk from 'chalk';
-import tokenizer from './tokenizer';
+import chalk from "chalk";
+import tokenizer from "./tokenizer";
 
 function isFunction(obj) {
-  return toString.call(obj) === '[object Function]';
+  return toString.call(obj) === "[object Function]";
 }
 
-let code; let splits; let
-  lastSplitEnd;
+let code;
+let splits;
+let lastSplitEnd;
 
 function addSplit(start, end, color) {
-  let result; let nextIndex; const
-    skip = 0;
+  let result;
+  let nextIndex;
+  const skip = 0;
 
   if (start >= end) return;
 
@@ -52,23 +54,23 @@ const highlighter = {
       super: chalk.yellow,
     },
     Punctuator: {
-      '->': chalk.cyan,
-      '=>': chalk.cyan,
+      "->": chalk.cyan,
+      "=>": chalk.cyan,
 
-      '!': chalk.cyan,
-      '||': chalk.cyan,
-      '&&': chalk.cyan,
-      '!=': chalk.cyan,
-      '~=': chalk.cyan,
-      '==': chalk.cyan,
+      "!": chalk.cyan,
+      "||": chalk.cyan,
+      "&&": chalk.cyan,
+      "!=": chalk.cyan,
+      "~=": chalk.cyan,
+      "==": chalk.cyan,
 
-      '++': chalk.cyan,
-      '-=': chalk.cyan,
-      '+=': chalk.cyan,
-      '*=': chalk.cyan,
-      '/=': chalk.cyan,
-      '%=': chalk.cyan,
-      '..=': chalk.cyan,
+      "++": chalk.cyan,
+      "-=": chalk.cyan,
+      "+=": chalk.cyan,
+      "*=": chalk.cyan,
+      "/=": chalk.cyan,
+      "%=": chalk.cyan,
+      "..=": chalk.cyan,
     },
     Identifier: {
       constructor: chalk.yellow,
@@ -103,25 +105,26 @@ const highlighter = {
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
 
-      var start; var
-        end;
+      var start;
+      var end;
       start = token.range[0];
       end = token.range[1];
 
       const colorForType = colors[token.type];
 
-      const color = colorForType
-        && colorForType.hasOwnProperty(token.value)
-        && colorForType[token.value]
-        && isFunction(colorForType[token.value])
-        ? colorForType[token.value]
-        : colorForType && colorForType._default;
+      const color =
+        colorForType &&
+        colorForType.hasOwnProperty(token.value) &&
+        colorForType[token.value] &&
+        isFunction(colorForType[token.value])
+          ? colorForType[token.value]
+          : colorForType && colorForType._default;
 
       addSplit(lastSplitEnd, start);
       const skip = addSplit(start, end, color);
     }
 
-    return splits.join('');
+    return splits.join("");
   },
 };
 

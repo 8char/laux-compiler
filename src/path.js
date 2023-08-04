@@ -1,12 +1,12 @@
-import traverse from './visitor';
-import * as virtualTypes from './virtual-types';
-import * as t from './types';
-import Scope from './scope';
-import { path as pathCache } from './cache';
+import traverse from "./visitor";
+import * as virtualTypes from "./virtual-types";
+import * as t from "./types";
+import Scope from "./scope";
+import { path as pathCache } from "./cache";
 
 const hooks = [
   function (self, parent) {
-    const removeParent = (self.condition === 'test' && (parent.isWhileStatement()));
+    const removeParent = self.condition === "test" && parent.isWhileStatement();
 
     if (removeParent) {
       parent.remove();
@@ -76,9 +76,7 @@ export default class NodePath {
     this.shouldStop = false;
   }
 
-  static get({
-    hub, parentPath, parent, container, listKey, key,
-  }) {
+  static get({ hub, parentPath, parent, container, listKey, key }) {
     if (!hub && parentPath) {
       hub = parentPath.hub;
     }
@@ -113,7 +111,7 @@ export default class NodePath {
   get(key, context) {
     if (context === true) context = this.context;
 
-    const parts = key.split('.');
+    const parts = key.split(".");
     if (parts.length === 1) {
       return this._getKey(key, context);
     }
@@ -293,13 +291,13 @@ export default class NodePath {
   visit() {
     if (!this.node) return false;
 
-    if (this.call('enter') || this.shouldSkip) {
+    if (this.call("enter") || this.shouldSkip) {
       return this.shouldStop;
     }
 
     traverse.node(this.node, this.visitors, this.state, this.scope, this);
 
-    this.call('exit');
+    this.call("exit");
 
     return this.shouldStop;
   }
@@ -312,7 +310,9 @@ export default class NodePath {
     }
 
     if (this.node) {
-      return this._call(visitors[this.node.type] && visitors[this.node.type][key]);
+      return this._call(
+        visitors[this.node.type] && visitors[this.node.type][key],
+      );
     }
 
     return false;
@@ -354,7 +354,7 @@ export default class NodePath {
       if (Array.isArray(path.container)) {
         return path;
       }
-    } while (path = path.parentPath);
+    } while ((path = path.parentPath));
   }
 
   remove() {
@@ -383,8 +383,10 @@ export default class NodePath {
       return parent.insertBefore(nodes);
     }
 
-    throw new Error("We don't know what to do with this node type. "
-        + "We were previously a Statement but we can't fit in here?");
+    throw new Error(
+      "We don't know what to do with this node type. " +
+        "We were previously a Statement but we can't fit in here?",
+    );
   }
 
   insertAfter(nodes) {
@@ -401,17 +403,17 @@ export default class NodePath {
       return parent.insertBefore(nodes);
     }
 
-    throw new Error("We don't know what to do with this node type. "
-        + "We were previously a Statement but we can't fit in here?");
+    throw new Error(
+      "We don't know what to do with this node type. " +
+        "We were previously a Statement but we can't fit in here?",
+    );
   }
 
   replaceWith(replacement) {
     this.resync();
 
     if (this.removed) {
-      throw new Error(
-        "You can't replace this node, we've already removed it",
-      );
+      throw new Error("You can't replace this node, we've already removed it");
     }
 
     if (replacement instanceof NodePath) {
@@ -420,7 +422,7 @@ export default class NodePath {
 
     if (!replacement) {
       throw new Error(
-        'You passed `path.replaceWith()` with a falsy node, use `path.remove()` instead',
+        "You passed `path.replaceWith()` with a falsy node, use `path.remove()` instead",
       );
     }
 
@@ -428,7 +430,7 @@ export default class NodePath {
 
     if (t.isChunk(this.node) && !t.isChunk(replacement)) {
       throw new Error(
-        'You can only replace a Chunk root node with another Chunk node',
+        "You can only replace a Chunk root node with another Chunk node",
       );
     }
 
@@ -438,16 +440,14 @@ export default class NodePath {
       );
     }
 
-    if (typeof replacement === 'string') {
+    if (typeof replacement === "string") {
       throw new Error(
         "Don't use `path.replaceWith()` with a source string, use `path.replaceWithSourceString()`",
       );
     }
 
     if (t.isStatement(this.node) && t.isExpression(replacement)) {
-      throw new Error(
-        'Cannot replace a statement with an expression',
-      );
+      throw new Error("Cannot replace a statement with an expression");
     }
 
     const oldNode = this.node;
@@ -508,18 +508,25 @@ export default class NodePath {
       this.container.splice(to, 0, node);
 
       if (this.context) {
-        const path = this.context.create(this.parent, this.container, to, this.listKey);
+        const path = this.context.create(
+          this.parent,
+          this.container,
+          to,
+          this.listKey,
+        );
 
         if (this.context.queue) path.pushContext(this.context);
         paths.push(path);
       } else {
-        paths.push(NodePath.get({
-          parentPath: this.parentath,
-          parent: this.parent,
-          container: this.container,
-          listKey: this.listKey,
-          key: to,
-        }));
+        paths.push(
+          NodePath.get({
+            parentPath: this.parentath,
+            parent: this.parent,
+            container: this.container,
+            listKey: this.listKey,
+            key: to,
+          }),
+        );
       }
 
       const contexts = this._getQueueContexts();
@@ -546,7 +553,7 @@ export default class NodePath {
 
   _replaceWith(node) {
     if (!this.container) {
-      throw new ReferenceError('Container is falsy');
+      throw new ReferenceError("Container is falsy");
     }
 
     if (this.inList) {
@@ -565,7 +572,8 @@ export default class NodePath {
       if (!node) return true;
 
       const ret = fn.call(this.state, this, this.state);
-      if (ret) throw new Error(`Unexpected return value from visitor method ${fn}`);
+      if (ret)
+        throw new Error(`Unexpected return value from visitor method ${fn}`);
 
       if (this.node !== node) return true;
 
@@ -627,13 +635,15 @@ export default class NodePath {
     const container = node[key];
 
     if (Array.isArray(container)) {
-      return container.map((_, i) => NodePath.get({
-        listKey: key,
-        parentPath: this,
-        parent: node,
-        container,
-        key: i,
-      }).setContext(context));
+      return container.map((_, i) =>
+        NodePath.get({
+          listKey: key,
+          parentPath: this,
+          parent: node,
+          container,
+          key: i,
+        }).setContext(context),
+      );
     }
 
     return NodePath.get({
@@ -648,7 +658,7 @@ export default class NodePath {
     let path = this;
 
     for (const part of parts) {
-      if (part === '.') {
+      if (part === ".") {
         path = path.parentPath;
       } else if (Array.isArray(path)) {
         path = path[part];
@@ -675,7 +685,7 @@ for (const type of t.TYPES) {
 }
 
 for (const type in virtualTypes) {
-  if (type[0] === '_') continue;
+  if (type[0] === "_") continue;
   if (t.TYPES.indexOf(type) < 0) t.TYPES.push(type);
 
   const virtualType = virtualTypes[type];

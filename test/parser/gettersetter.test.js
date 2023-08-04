@@ -1,8 +1,8 @@
 /* eslint-disable no-unused-expressions */
-import chai, { expect } from 'chai';
-import chaiSubset from 'chai-subset';
-import { stripIndent } from '../util';
-import parser from '../../src/parser';
+import chai, { expect } from "chai";
+import chaiSubset from "chai-subset";
+import { stripIndent } from "../util";
+import parser from "../../src/parser";
 
 chai.use(chaiSubset);
 
@@ -29,7 +29,7 @@ export default {
     const ast = parser.parse(CODE.GETTER);
     const statement = ast.chunk.body[0].body[0];
 
-    expect(statement.type).to.equal('ClassGetSetStatement');
+    expect(statement.type).to.equal("ClassGetSetStatement");
   },
   onlyHasGet: () => {
     const ast = parser.parse(CODE.GETTER);

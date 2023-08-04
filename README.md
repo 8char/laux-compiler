@@ -38,7 +38,7 @@ To transpile you simply go the folder your project belongs to
 
 ## Workspaces
 
-There's also an option to use workspaces, which simply means using a configuration file. The config file must be ```lauxconfig.json``` and be located in the root folder.
+There's also an option to use workspaces, which simply means using a configuration file. The config file must be `lauxconfig.json` and be located in the root folder.
 
 This allows you to use a lot more options, of which one of the intersting ones are merges. You can merge multiple files into 1 single output file, which are very useful for releases.
 
@@ -52,11 +52,11 @@ An example of a config file would be this.
   },
   "merges": [
     {
-      "filesGlob": [ "atlas_jobcreator/fields/**/*.laux"],
+      "filesGlob": ["atlas_jobcreator/fields/**/*.laux"],
       "output": "atlas_jobcreator/fields"
     },
     {
-      "filesGlob": [ "atlas_jobcreator/currencies/**/*.laux"],
+      "filesGlob": ["atlas_jobcreator/currencies/**/*.laux"],
       "output": "atlas_jobcreator/currencies"
     }
   ]
@@ -102,7 +102,7 @@ Thin arrow is essentially just a fat arrow, but it automatically adds self, just
 ## Decorators
 
 LAUX adds decorators which can mutate functions to allow for things such as deprecation, singeltons, registries, mixin functionality, memoization, validation, rate limiting, caching, authentication/authorization, logging, etc...
-*You can currently only have one decorator per function, however you can combine them in to one larger decorator*
+_You can currently only have one decorator per function, however you can combine them in to one larger decorator_
 
 ```lua
 -- These deprecated functions can be defined in
@@ -149,7 +149,7 @@ end
 ## Types
 
 **This is real time type checking, so don't run it in something that gets run A TON, like every frame**
-*Currently doens't work with arrow functions, fixing later*
+_Currently doens't work with arrow functions, fixing later_
 
 ```lua
 function Foo(bar: string)
@@ -287,7 +287,7 @@ end
 Lua code
 
 ```lua
-if (((groups and groups[groupKind]) and groups[groupKind].members) and groups[groupKind].members.name) then 
+if (((groups and groups[groupKind]) and groups[groupKind].members) and groups[groupKind].members.name) then
 
 end
 ```

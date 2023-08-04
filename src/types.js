@@ -1,6 +1,6 @@
-import { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS } from './definitions';
+import { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS } from "./definitions";
 
-import './definitions/init';
+import "./definitions/init";
 
 export { VISITOR_KEYS, BUILDER_KEYS, ALIAS_KEYS };
 
@@ -8,7 +8,7 @@ const t = exports;
 
 t.INHERIT_KEYS = {
   optional: [],
-  force: ['range', 'loc'],
+  force: ["range", "loc"],
 };
 
 function registerType(type) {
@@ -22,7 +22,11 @@ function registerType(type) {
   t[`assert${type}`] = function (node, opts) {
     opts = opts || {};
     if (!is(node, opts)) {
-      throw new Error(`Expected type ${JSON.stringify(type)} with option ${JSON.stringify(opts)}`);
+      throw new Error(
+        `Expected type ${JSON.stringify(type)} with option ${JSON.stringify(
+          opts,
+        )}`,
+      );
     }
   };
 }
@@ -30,7 +34,8 @@ function registerType(type) {
 t.FLIPPED_ALIAS_KEYS = {};
 Object.keys(ALIAS_KEYS).forEach((type) => {
   t.ALIAS_KEYS[type].forEach((alias) => {
-    const types = t.FLIPPED_ALIAS_KEYS[alias] = t.FLIPPED_ALIAS_KEYS[alias] || [];
+    const types = (t.FLIPPED_ALIAS_KEYS[alias] =
+      t.FLIPPED_ALIAS_KEYS[alias] || []);
     types.push(type);
   });
 });
@@ -51,7 +56,7 @@ export function is(type, node, opts) {
   const matches = isType(node.type, type);
   if (!matches) return false;
 
-  if (typeof opts === 'undefined') {
+  if (typeof opts === "undefined") {
     return true;
   }
 
@@ -81,7 +86,6 @@ export function isScope(node, parent) {
 
 export function isReferenced(node, parent) {
   switch (parent.type) {
-
   }
 
   return true;
@@ -108,7 +112,7 @@ export function inherits(child, parent) {
 
   // force inherit "private" properties
   for (const key in parent) {
-    if (key[0] === '_') child[key] = parent[key];
+    if (key[0] === "_") child[key] = parent[key];
   }
 
   // force inherit select properties
@@ -133,7 +137,7 @@ export function getBindingIdentifiers(node, duplicates, outerOnly) {
 
     if (t.isIdentifier(id)) {
       if (duplicates) {
-        const _ids = ids[id.name] = ids[id.name] || [];
+        const _ids = (ids[id.name] = ids[id.name] || []);
         _ids.push(id);
       } else {
         ids[id.name] = id;
@@ -167,13 +171,13 @@ export function getBindingIdentifiers(node, duplicates, outerOnly) {
 }
 
 t.getBindingIdentifiers.keys = {
-  UnaryExpression: ['argument'],
-  AssignmentStatement: ['variables'],
+  UnaryExpression: ["argument"],
+  AssignmentStatement: ["variables"],
 
   // FunctionDeclaration: ["id", "params"],
   // FunctionDeclaration: ["id", "params"],
 
-  ClassStatement: ['identifier'],
+  ClassStatement: ["identifier"],
   // ClassExpression: ["id"],
 };
 
@@ -181,5 +185,6 @@ export function getOuterBindingIdentifiers(node, duplicates) {
   return getBindingIdentifiers(node, duplicates, true);
 }
 
-export const TYPES = Object.keys(t.VISITOR_KEYS)
-  .concat(Object.keys(t.FLIPPED_ALIAS_KEYS));
+export const TYPES = Object.keys(t.VISITOR_KEYS).concat(
+  Object.keys(t.FLIPPED_ALIAS_KEYS),
+);

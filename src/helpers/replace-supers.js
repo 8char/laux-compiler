@@ -1,11 +1,12 @@
-import * as t from '../types';
-import * as b from '../builder';
+import * as t from "../types";
+import * as b from "../builder";
 
 const visitor = {
   enter(path, state) {
     // if (path.isIdentifier()) {}
 
-    const isBareSuper = path.isCallExpression() && path.get('base').isSuperExpression();
+    const isBareSuper =
+      path.isCallExpression() && path.get("base").isSuperExpression();
 
     const result = state.buildSuper(path);
 
@@ -28,17 +29,16 @@ const visitor = {
         path.replaceWith(result);
       }
 
-      const parent = path.find((p) => p.isCallExpression() || Array.isArray(path.container));
+      const parent = path.find(
+        (p) => p.isCallExpression() || Array.isArray(path.container),
+      );
 
       if (parent.isCallExpression()) {
         parent.replaceWith(
-          b.callExpression(
-            parent.node.base,
-            [
-              b.selfExpression(),
-              ...parent.node.arguments,
-            ],
-          ),
+          b.callExpression(parent.node.base, [
+            b.selfExpression(),
+            ...parent.node.arguments,
+          ]),
         );
       }
     }
@@ -60,12 +60,8 @@ export default class ReplaceSupers {
   getSuperProperty(property) {
     return b.memberExpression(
       this.classRef,
-      '.',
-      b.memberExpression(
-        b.identifier('__parent'),
-        '.',
-        property,
-      ),
+      ".",
+      b.memberExpression(b.identifier("__parent"), ".", property),
     );
   }
 
@@ -79,13 +75,13 @@ export default class ReplaceSupers {
       const { base } = node;
 
       if (t.isSuperExpression(base)) {
-        property = b.identifier('__init');
+        property = b.identifier("__init");
         args = node.arguments;
       }
     } else if (t.isMemberExpression(node) && t.isSuperExpression(node.base)) {
       property = node.identifier;
     } else if (path.isSuperExpression()) {
-      property = b.identifier('__init');
+      property = b.identifier("__init");
     }
 
     if (!property) return undefined;
@@ -93,10 +89,7 @@ export default class ReplaceSupers {
     const superProperty = this.getSuperProperty(property);
 
     if (args) {
-      return b.callExpression(
-        superProperty,
-        args,
-      );
+      return b.callExpression(superProperty, args);
     }
 
     return superProperty;

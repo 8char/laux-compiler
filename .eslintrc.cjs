@@ -1,16 +1,17 @@
 module.exports = {
-  ignorePatterns: ['dist/**/**.js'],
+  ignorePatterns: ["dist/**/**.js"],
   env: {
     browser: true,
     es2021: true,
   },
-  extends: 'airbnb-base',
-  overrides: [
-  ],
+  plugins: ["prettier"],
+  extends: ["airbnb-base", "plugin:prettier/recommended"],
+  overrides: [],
   parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
+    ecmaVersion: "latest",
+    sourceType: "module",
   },
   rules: {
+    "no-console": "off",
   },
 };

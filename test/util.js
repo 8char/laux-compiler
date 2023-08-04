@@ -15,9 +15,9 @@ function stripIndent(string) {
     return string;
   }
 
-  const regex = new RegExp(`^[ \\t]{${indent}}`, 'gm');
+  const regex = new RegExp(`^[ \\t]{${indent}}`, "gm");
 
-  return string.replace(regex, '');
+  return string.replace(regex, "");
 }
 
 export { stripIndent, minIndent };
