@@ -32,11 +32,11 @@ export default class FileHandler {
     if (!this.release) return {};
 
     const merges = this.workspace.getMerges();
-    for (const entry of merges) {
+    merges.forEach((entry) => {
       const { output } = entry;
       let files = [];
       if (entry.filesGlob) {
-        for (const fileGlob of entry.filesGlob) {
+        entry.filesGlob.forEach((fileGlob) => {
           files = files.concat(
             files,
             glob.sync(fileGlob, {
@@ -44,13 +44,13 @@ export default class FileHandler {
               cwd: this.workspace.getAbsoluteInput(),
             }),
           );
-        }
+        });
         files.sort();
       }
       if (entry.files) {
         files = files.concat(files, entry.files);
       }
-      for (const file of files) {
+      files.forEach((file) => {
         const fileName = new CacheFile(file);
         // If we already have it in merge map we need to stop & return an error.
         // No duplicates!
@@ -63,8 +63,10 @@ export default class FileHandler {
         }
 
         this.mergeMap.set(fileName.getCleanPath(), output);
-      }
-    }
+
+        return undefined;
+      });
+    });
 
     return { success: true };
   }
@@ -99,7 +101,7 @@ export default class FileHandler {
     const outputFiles = {};
     const usedFiles = {};
     this.mergeMap.forEach((output, input) => {
-      if (!outputFiles.hasOwnProperty(output)) {
+      if (!Object.prototype.hasOwnProperty.call(outputFiles, output)) {
         outputFiles[output] = [input];
       } else {
         outputFiles[output].push(input);
@@ -114,28 +116,31 @@ export default class FileHandler {
     });
 
     const filesString = {};
-    for (const [output, files] of Object.entries(outputFiles)) {
-      let str = "";
-      for (const filePath of files) {
-        const file = this.fileMap.get(filePath);
-        if (file !== undefined) {
-          str += `${file.getContent()}\r\n`;
-        } else {
+
+    Object.entries(outputFiles).forEach(([output, files]) => {
+      const str = files
+        .map((filePath) => {
+          const file = this.fileMap.get(filePath);
+          if (file !== undefined) {
+            return file.getContent();
+          }
           console.log(
             `${chalk.magenta("LAUX")} ${chalk.yellow(
               "WARNING",
             )} Unable to find ${filePath} file!`,
           );
-        }
-      }
+          return "";
+        })
+        .join("\r\n");
+
       filesString[output] = str;
-    }
+    });
 
     this.transpileFiles(filesString);
   }
 
   transpileFiles(filesString, change = false) {
-    for (const [fileName, content] of Object.entries(filesString)) {
+    Object.entries(filesString).forEach(([fileName, content]) => {
       try {
         const fileObj = this.fileMap.get(fileName);
         if (fileObj !== undefined && fileObj.parse.ext === ".lua") {
@@ -145,7 +150,7 @@ export default class FileHandler {
             `${chalk.magenta("LAUX")} ${chalk.gray("COPIED")} ${fileName}.lua`,
           );
 
-          continue;
+          return; // Use 'return' instead of 'continue'
         }
 
         let elapsed = 0;
@@ -177,14 +182,15 @@ export default class FileHandler {
           const lineEnd = Math.min(lines.length, e.line + 3);
 
           console.log(
-            `${chalk.magenta("LAUX")} ${chalk.red("ERROR")} ` +
-              `SyntaxError: ${fileName}: ${e.message}`,
+            `${chalk.magenta("LAUX")} ${chalk.red(
+              "ERROR",
+            )} SyntaxError: ${fileName}: ${e.message}`,
           );
 
-          for (let i = lineStart; i < lineEnd; i++) {
+          for (let i = lineStart; i < lineEnd; i += 1) {
             const line = lines[i];
 
-            const c1 = i + 1 == e.line ? ">" : " ";
+            const c1 = i + 1 === e.line ? ">" : " ";
             const lineFillStr = new Array(
               lineEnd.toString().length - (i + 1).toString().length + 1,
             ).join(" ");
@@ -192,7 +198,7 @@ export default class FileHandler {
             const litLine = highlighter.highlight(line);
             console.log(chalk.red(c1) + chalk.gray(` ${lineStr} | `) + litLine);
 
-            if (i + 1 == e.line) {
+            if (i + 1 === e.line) {
               const offset = new Array(e.column + 1).join(" ");
               console.log(
                 ` ${chalk.gray(
@@ -207,13 +213,12 @@ export default class FileHandler {
           console.log(
             `${chalk.magenta("LAUX")} ${chalk.red("ERROR")} ${fileName}.laux:`,
           );
-
           console.log(
             `${chalk.magenta("LAUX")} ${chalk.red("ERROR")} ${e.stack}`,
           );
         }
       }
-    }
+    });
   }
 
   async copyFile(fileName) {
@@ -282,7 +287,7 @@ export default class FileHandler {
     const outputFiles = {};
     const usedFiles = {};
     this.mergeMap.forEach((output, input) => {
-      if (!outputFiles.hasOwnProperty(output)) {
+      if (!Object.prototype.hasOwnProperty.call(outputFiles, output)) {
         outputFiles[output] = [input];
       } else {
         outputFiles[output].push(input);
@@ -297,25 +302,27 @@ export default class FileHandler {
     });
 
     const transpiled = [];
-    for (const [name, files] of Object.entries(outputFiles)) {
+    Object.entries(outputFiles).forEach(([name, files]) => {
       if (files.includes(fileObj.getCleanPath())) {
-        for (const filePath of files) {
+        files.forEach((filePath) => {
           const file = this.fileMap.get(filePath);
           transpiled.push({
             file: this.loadFile(file),
             output: name,
           });
-        }
+        });
       }
-    }
+    });
     await Promise.all(transpiled.map((transpile) => transpile.file));
 
     let str = "";
     let chosenName = "";
-    for (const [name, files] of Object.entries(outputFiles)) {
-      if (files.includes(fileObj.getCleanPath())) {
+    const cleanPath = fileObj.getCleanPath();
+
+    Object.entries(outputFiles).forEach(([name, files]) => {
+      if (files.includes(cleanPath)) {
         chosenName = name;
-        for (const filePath of files) {
+        files.forEach((filePath) => {
           const file = this.fileMap.get(filePath);
           if (file !== undefined) {
             str += `${file.getContent()}\r\n`;
@@ -326,11 +333,14 @@ export default class FileHandler {
               )} Unable to find ${filePath} file!`,
             );
           }
-        }
+        });
 
-        break;
+        // Exit the loop after processing the first match
+        return false;
       }
-    }
+
+      return undefined;
+    });
 
     const filesString = {};
     filesString[chosenName] = str;
