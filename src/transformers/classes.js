@@ -2,9 +2,7 @@ import _ from "underscore";
 
 import ReplaceSupers from "../helpers/replace-supers";
 
-import traverse from "../visitor";
 import * as b from "../builder";
-import * as t from "../types";
 
 const verifyConstructorVisitor = {
   SuperExpression(path) {
@@ -76,36 +74,38 @@ export default class ClassTransformer {
     const { body } = this;
 
     const singletonVars =
-      node.identifier.type == "CallExpression" && node.identifier.arguments;
+      node.identifier.type === "CallExpression" && node.identifier.arguments;
     // If it's a singleton, we still wanna define our class as normal, hence get the Identifier/MemberExpression
     if (singletonVars) {
       node.identifier = node.identifier.base;
     }
     let strName = node.identifier.name;
-    if (strName == undefined) {
-      strName = "";
 
-      function constructName(obj, separator = "", postFix = "") {
-        if (obj.type == "Identifier") {
-          strName += `${separator}${obj.name}${postFix}`;
-        } else if (obj.type == "BinaryExpression") {
-          if (strName == "") {
-            constructName(obj.left);
-          }
-
-          constructName(obj.right, "|");
-        } else if (obj.type == "MemberExpression") {
-          constructName(obj.base, `${strName == "" ? "" : "|"}`);
-
-          constructName(obj.identifier, ".", "");
+    function constructName(obj, separator = "", postFix = "") {
+      if (obj.type === "Identifier") {
+        strName += `${separator}${obj.name}${postFix}`;
+      } else if (obj.type === "BinaryExpression") {
+        if (strName === "") {
+          constructName(obj.left);
         }
+
+        constructName(obj.right, "|");
+      } else if (obj.type === "MemberExpression") {
+        constructName(obj.base, `${strName === "" ? "" : "|"}`);
+
+        constructName(obj.identifier, ".", "");
       }
+    }
+
+    if (strName === undefined) {
+      strName = "";
 
       constructName(node.identifier);
     }
+
     this.name = strName;
 
-    const constructorBody = (this.constructorBody = []);
+    this.constructorBody = [];
     this.constructor = this.buildConstructor();
 
     const idClass0 = b.identifier("_class_0", true);
@@ -141,21 +141,21 @@ export default class ClassTransformer {
 
     this.buildBody();
 
-    for (const method of this.setters) {
+    this.setters.forEach((method) => {
       baseTableKeys.push(method);
-    }
+    });
 
-    for (const method of this.getters) {
+    this.getters.forEach((method) => {
       baseTableKeys.push(method);
-    }
+    });
 
-    for (const method of this.methods) {
+    this.methods.forEach((method) => {
       baseTableKeys.push(method);
-    }
+    });
 
-    for (const member of this.members) {
+    this.members.forEach((member) => {
       this.constructorBody.unshift(member);
-    }
+    });
 
     // If no constructor is written but the class extends, we add an vararg super constructor ourself
     if (this.constructorBody.length === 0 && parent) {
@@ -170,10 +170,10 @@ export default class ClassTransformer {
       const identifier = b.memberExpression(
         b.identifier(split[0]),
         ".",
-        split.length == 1 && init,
+        split.length === 1 && init,
       );
       let currentIdentifier = identifier;
-      for (let i = 1; i < split.length; i++) {
+      for (let i = 1; i < split.length; i += 1) {
         currentIdentifier.identifier = b.memberExpression(
           b.identifier(split[i]),
           ".",
@@ -339,7 +339,7 @@ export default class ClassTransformer {
 
   buildBody() {
     this.pushBody();
-    this.verifyConstructor();
+    // this.verifyConstructor();
   }
 
   buildConstructor() {
@@ -350,7 +350,7 @@ export default class ClassTransformer {
     );
   }
 
-  buildMember(member) {
+  static buildMember(member) {
     return b.assignmentStatement(
       [b.memberExpression(b.selfExpression(), ".", member.identifier)],
       [member.expression],
@@ -359,14 +359,14 @@ export default class ClassTransformer {
 
   translateCallExpressions(node) {
     if (Array.isArray(node)) {
-      node.forEach((b) => this.translateCallExpressions(b));
+      node.forEach((childNode) => this.translateCallExpressions(childNode));
 
       return;
     }
 
     const { body, type, expression, base, identifier } = node;
     if (body && body.length >= 1) {
-      body.forEach((b) => this.translateCallExpressions(b));
+      body.forEach((childNode) => this.translateCallExpressions(childNode));
     }
     if (expression) {
       this.translateCallExpressions(expression);
@@ -394,18 +394,20 @@ export default class ClassTransformer {
     let typeMethod;
     // First we create a private set
     const privateSet = new Set();
-    for (const path of classBodyPaths) {
+    classBodyPaths.forEach((path) => {
       const { visibility } = path.node;
       const { name } = path.node.identifier;
 
       if (visibility === "PRIVATE") {
         privateSet.add(name);
       }
-    }
+    });
+
     this.privateSet = privateSet;
 
-    for (const path of classBodyPaths) {
+    classBodyPaths.forEach((path) => {
       const { node } = path;
+
       if (path.isClassMemberStatement()) {
         this.pushMember(node, path);
       }
@@ -440,14 +442,14 @@ export default class ClassTransformer {
         if (isConstructor) {
           this.pushConstructor(replaceSupers, node, path);
         } else {
-          if (path.node.identifier.name == "__type") {
+          if (path.node.identifier.name === "__type") {
             typeMethod = path;
           }
 
           this.pushMethod(node, path);
         }
       }
-    }
+    });
 
     if (!typeMethod) {
       this.methods.push(
@@ -467,117 +469,41 @@ export default class ClassTransformer {
     }
   }
 
-  verifyConstructor() {
-    if (!this.hasConstructor) return;
-    if (!this.isDerived) return;
-
-    const path = this.userConstructorPath;
-    const body = path.get("body");
-
-    const guaranteedSuper = !!this.bareSupers.length;
-
-    const { superRef } = this;
-  }
-
   pushConstructor(replaceSupers, node, path) {
     this.bareSupers = replaceSupers.bareSupers;
 
     const { constructor } = this;
 
-    constructor.parameters.push.apply(constructor.parameters, node.parameters);
+    constructor.parameters.push(...node.parameters);
 
     this.userConstructorPath = path;
     this.userConstructor = node;
     this.hasConstructor = true;
 
-    for (const n of node.body) {
-      if (n.type != "CallStatement") continue;
-      if (!n.expression) continue;
-      if (n.expression.type != "CallExpression") continue;
-      if (n.expression.base.type != "MemberExpression") continue;
-      if (n.expression.base.base.type != "SelfExpression") continue;
-
-      for (const arg of n.expression.arguments) {
-        if (arg.type != "MemberExpression") continue;
-        if (arg.base.type != "SelfExpression") continue;
-
-        if (this.privateSet.has(arg.identifier.name)) {
-          arg.identifier.name = this.getPrivateName(arg.identifier.name);
-        }
+    node.body.forEach((n) => {
+      if (
+        n.type === "CallStatement" &&
+        n.expression &&
+        n.expression.type === "CallExpression" &&
+        n.expression.base.type === "MemberExpression" &&
+        n.expression.base.base.type === "SelfExpression"
+      ) {
+        n.expression.arguments
+          .filter(
+            (arg) =>
+              arg.type === "MemberExpression" &&
+              arg.base.type === "SelfExpression",
+          )
+          .forEach((arg) => {
+            if (this.privateSet.has(arg.identifier.name)) {
+              // eslint-disable-next-line no-param-reassign
+              arg.identifier.name = this.getPrivateName(arg.identifier.name);
+            }
+          });
       }
-    }
+    });
 
-    this.constructorBody.push.apply(this.constructorBody, node.body);
-
-    if (false) {
-      const state = {
-        bareSupers: [],
-      };
-
-      constructorPath.traverse(
-        {
-          CallExpression(path, state) {
-            const callNode = path.node;
-
-            let isSuperCall = false;
-            if (callNode.base.type == "SuperExpression") {
-              state.bareSupers.push(path);
-
-              const superPath = path.get("base");
-              const superNode = superPath.node;
-
-              superPath.replaceWith(
-                b.memberExpression(superNode, ".", b.identifier("__init")),
-              );
-
-              isSuperCall = true;
-            } else {
-              const basePath = path.get("base");
-              basePath.traverse({
-                SuperExpression(path) {
-                  path.stop();
-                  isSuperCall = true;
-                },
-                enter(path) {
-                  if (
-                    path.type !== "MemberExpression" &&
-                    path.type !== "SuperExpression"
-                  ) {
-                    path.stop();
-                  }
-                },
-              });
-            }
-
-            if (isSuperCall) {
-              console.log(path);
-              path.get("arguments").insertBefore(b.selfExpression());
-            }
-          },
-
-          SuperExpression(path, state) {
-            if (!state.bareSupers.length) {
-              throw new Error("Something");
-            }
-
-            path.replaceWith(
-              b.memberExpression(
-                node.identifier,
-                ".",
-                b.identifier("__parent"),
-              ),
-            );
-          },
-
-          ClassStatement(path) {
-            path.stop();
-          },
-
-          enter(path) {},
-        },
-        state,
-      );
-    }
+    this.constructorBody.push(...node.body);
   }
 
   getPrivateName(fieldName) {
@@ -588,7 +514,7 @@ export default class ClassTransformer {
     return `${name}__${fieldName}`;
   }
 
-  pushMethod(node, path) {
+  pushMethod(node) {
     const params = node.parameters.slice();
     if (!node.isStatic) {
       params.unshift(b.selfExpression());
@@ -623,7 +549,7 @@ export default class ClassTransformer {
     }
   }
 
-  pushGetSet(node, path) {
+  pushGetSet(node) {
     const rawName = node.identifier.name;
     const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
 
@@ -667,10 +593,10 @@ export default class ClassTransformer {
     }
   }
 
-  pushMember(node, path) {
+  pushMember(node) {
     this.userMembers.push(node);
 
-    const member = this.buildMember(node);
+    const member = ClassTransformer.buildMember(node);
 
     if (node.isStatic) {
       this.staticMembers.push({

@@ -4,7 +4,6 @@ import chalk from "chalk";
 import jetpack from "fs-jetpack";
 import glob from "fast-glob";
 import highlighter from "../highlighter";
-import compile from "./compile";
 import CodeGenerator from "../codegenerator";
 import CacheFile from "./fileCache";
 import Compile from "./compile";
