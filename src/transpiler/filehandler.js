@@ -12,6 +12,10 @@ export default class FileHandler {
   // Disable transpiling at the start
   canTranspile = false;
 
+  static create(workspace) {
+    return new FileHandler(workspace);
+  }
+
   constructor(workspace) {
     this.fileMap = new Map();
     this.mergeMap = new Map();

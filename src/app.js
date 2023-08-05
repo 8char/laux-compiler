@@ -59,7 +59,7 @@ commander
       ),
       _options.release,
     );
-    new FileHandler(workspace);
+    FileHandler.create(workspace);
   });
 
 commander
@@ -86,7 +86,7 @@ commander
         }
 
         const workspace = new Workspace(data, _options.release);
-        new FileHandler(workspace);
+        FileHandler.create(workspace);
       })
       .catch((e) => {
         console.log(
