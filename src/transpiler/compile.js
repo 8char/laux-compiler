@@ -2,7 +2,7 @@ import parser from "../parser";
 import compiler from "../compiler";
 import CompiledFile from "./compiledfile";
 
-class Compile {
+export default class Compile {
   static compileCode(code, workspace) {
     const ast = parser.parse(code, {
       comments: true,
@@ -17,5 +17,3 @@ class Compile {
     return new CompiledFile(code, ast, compiledAST);
   }
 }
-
-export default new Compile();

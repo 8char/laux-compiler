@@ -7,6 +7,7 @@ import highlighter from "../highlighter";
 import compile from "./compile";
 import CodeGenerator from "../codegenerator";
 import CacheFile from "./fileCache";
+import Compile from "./compile";
 
 export default class FileHandler {
   // Disable transpiling at the start
@@ -155,7 +156,7 @@ export default class FileHandler {
 
         let elapsed = 0;
         const timeStart = process.hrtime();
-        const compiledFile = compile.compileCode(content, this.workspace);
+        const compiledFile = Compile.compileCode(content, this.workspace);
         this.transpileMap.set(fileName, compiledFile);
         this.writeFile(fileName);
         elapsed = process.hrtime(timeStart)[1] / 100000;
