@@ -3,7 +3,7 @@ import compiler from "../compiler";
 import CompiledFile from "./compiledfile";
 
 class Compile {
-  compileCode(code, workspace) {
+  static compileCode(code, workspace) {
     const ast = parser.parse(code, {
       comments: true,
       locations: true,
