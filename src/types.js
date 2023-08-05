@@ -12,16 +12,15 @@ t.INHERIT_KEYS = {
 };
 
 function registerType(type) {
-  const is = t[`is${type}`];
-  if (!is) {
-    t[`is${type}`] = function (node, opts) {
+  const isFunc = t[`is${type}`];
+  if (!isFunc) {
+    t[`is${type}`] = (node, opts) => {
       return t.is(type, node, opts);
     };
   }
 
-  t[`assert${type}`] = function (node, opts) {
-    opts = opts || {};
-    if (!is(node, opts)) {
+  t[`assert${type}`] = (node, opts = {}) => {
+    if (!isFunc(node, opts)) {
       throw new Error(
         `Expected type ${JSON.stringify(type)} with option ${JSON.stringify(
           opts,
@@ -34,20 +33,40 @@ function registerType(type) {
 t.FLIPPED_ALIAS_KEYS = {};
 Object.keys(ALIAS_KEYS).forEach((type) => {
   t.ALIAS_KEYS[type].forEach((alias) => {
-    const types = (t.FLIPPED_ALIAS_KEYS[alias] =
-      t.FLIPPED_ALIAS_KEYS[alias] || []);
+    const aliasKeys = t.FLIPPED_ALIAS_KEYS[alias];
+    const types = aliasKeys || [];
+
     types.push(type);
   });
 });
 
-for (const type in VISITOR_KEYS) {
+Object.entries(VISITOR_KEYS).forEach(([type]) => {
   registerType(type);
-}
+});
 
-for (const key in ALIAS_KEYS) {
-  for (const type of ALIAS_KEYS[key]) {
+Object.keys(ALIAS_KEYS).forEach((key) => {
+  ALIAS_KEYS[key].forEach((type) => {
     registerType(type);
+  });
+});
+
+export function isType(nodeType, type) {
+  if (nodeType === type) return true;
+
+  if (t.ALIAS_KEYS[type]) return false;
+
+  const aliases = t.FLIPPED_ALIAS_KEYS[type];
+  if (aliases) {
+    if (aliases[0] === nodeType) return true;
+
+    const isAliasPresent = aliases.some((alias) => nodeType === alias);
+
+    if (isAliasPresent) {
+      return true;
+    }
   }
+
+  return false;
 }
 
 export function is(type, node, opts) {
@@ -63,31 +82,11 @@ export function is(type, node, opts) {
   return t.shallowEqual(node, opts);
 }
 
-export function isType(nodeType, type) {
-  if (nodeType == type) return true;
-
-  if (t.ALIAS_KEYS[type]) return false;
-
-  const aliases = t.FLIPPED_ALIAS_KEYS[type];
-  if (aliases) {
-    if (aliases[0] === nodeType) return true;
-
-    for (const alias of aliases) {
-      if (nodeType === alias) return true;
-    }
-  }
-
-  return false;
-}
-
-export function isScope(node, parent) {
+export function isScope(node) {
   return t.isScopable(node);
 }
 
-export function isReferenced(node, parent) {
-  switch (parent.type) {
-  }
-
+export function isReferenced(/* node, parent */) {
   return true;
 }
 
@@ -98,27 +97,25 @@ export function isBlockScoped(node) {
 export function shallowEqual(actual, expected) {
   const keys = Object.keys(expected);
 
-  for (const key of keys) {
-    if (actual[key] !== expected[key]) {
-      return false;
-    }
-  }
-
-  return true;
+  return keys.every((key) => actual[key] === expected[key]);
 }
 
+// TODO: Rework this as it uses "dangling underscores" to denote private members, which is being phased out
 export function inherits(child, parent) {
   if (!child || !parent) return child;
 
   // force inherit "private" properties
-  for (const key in parent) {
-    if (key[0] === "_") child[key] = parent[key];
-  }
+  Object.keys(parent).forEach((key) => {
+    console.log(parent[key]);
+    if (key[0] === "_") {
+      child[key] = parent[key];
+    }
+  });
 
   // force inherit select properties
-  for (const key of t.INHERIT_KEYS.force) {
+  Object.keys(t.INHERIT_KEYS.force).forEach((key) => {
     child[key] = parent[key];
-  }
+  });
 
   // t.inheritsComments(child, parent);
 
@@ -137,8 +134,8 @@ export function getBindingIdentifiers(node, duplicates, outerOnly) {
 
     if (t.isIdentifier(id)) {
       if (duplicates) {
-        const _ids = (ids[id.name] = ids[id.name] || []);
-        _ids.push(id);
+        const nameToIdentifiersMap = ids[id.name] || (ids[id.name] = []);
+        nameToIdentifiersMap.push(id);
       } else {
         ids[id.name] = id;
       }
@@ -157,7 +154,7 @@ export function getBindingIdentifiers(node, duplicates, outerOnly) {
     }
 
     if (keys) {
-      for (let i = 0; i < keys.length; i++) {
+      for (let i = 0; i < keys.length; i += 1) {
         const key = keys[i];
 
         if (id[key]) {
