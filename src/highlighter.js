@@ -10,10 +10,6 @@ let splits;
 let lastSplitEnd;
 
 function addSplit(start, end, color) {
-  let result;
-  let nextIndex;
-  const skip = 0;
-
   if (start >= end) return;
 
   if (color) {
@@ -23,8 +19,6 @@ function addSplit(start, end, color) {
   }
 
   lastSplitEnd = end;
-
-  return skip;
 }
 
 const highlighter = {
@@ -76,13 +70,13 @@ const highlighter = {
       constructor: chalk.yellow,
     },
     BooleanLiteral: {
-      _default: chalk.magenta,
+      fallback: chalk.magenta,
     },
     NumericLiteral: {
-      _default: chalk.green,
+      fallback: chalk.green,
     },
     StringLiteral: {
-      _default: chalk.yellow,
+      fallback: chalk.yellow,
     },
   },
 
@@ -102,26 +96,24 @@ const highlighter = {
       skipExceptions: true,
     });
 
-    for (let i = 0; i < tokens.length; i++) {
+    for (let i = 0; i < tokens.length; i += 1) {
       const token = tokens[i];
-
-      var start;
-      var end;
-      start = token.range[0];
-      end = token.range[1];
+      const {
+        range: [start, end],
+      } = token;
 
       const colorForType = colors[token.type];
 
       const color =
         colorForType &&
-        colorForType.hasOwnProperty(token.value) &&
+        Object.prototype.hasOwnProperty.call(colorForType, token.value) &&
         colorForType[token.value] &&
         isFunction(colorForType[token.value])
           ? colorForType[token.value]
-          : colorForType && colorForType._default;
+          : colorForType && colorForType.fallback;
 
       addSplit(lastSplitEnd, start);
-      const skip = addSplit(start, end, color);
+      addSplit(start, end, color);
     }
 
     return splits.join("");
