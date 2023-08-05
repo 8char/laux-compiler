@@ -1,80 +1,78 @@
 const SPACES_RE = /^[ \t]+$/;
 
 export default class Buffer {
-  _buffer = [];
+  buffer = [];
 
-  _queue = [];
+  queueList = [];
 
-  _last = "";
+  last = "";
 
-  _position = {
+  position = {
     line: 1,
     column: 0,
   };
 
-  _sourcePosition = {
+  sourcePosition = {
     identifierName: null,
     line: null,
     column: null,
     filename: null,
   };
 
-  constructor() {}
-
   get() {
-    this._flush();
+    this.flush();
 
     const result = {
-      code: this._buffer.join(""),
+      code: this.buffer.join(""),
     };
 
     return result;
   }
 
   queue(str) {
-    if (str == "\n")
-      while (this._queue.length > 0 && SPACES_RE.test(this._queue[0][0]))
-        this._queue.shift();
+    if (str === "\n")
+      while (this.queueList.length > 0 && SPACES_RE.test(this.queueList[0][0]))
+        this.queueList.shift();
 
-    const { line, column, fileName, identifierName } = this._sourcePosition;
-    this._queue.unshift([str, line, column, identifierName, fileName]);
+    const { line, column, fileName, identifierName } = this.sourcePosition;
+    this.queueList.unshift([str, line, column, identifierName, fileName]);
   }
 
   append(str) {
-    this._flush();
-    const { line, column, fileName, identifierName } = this._sourcePosition;
-    this._append(str, line, column, identifierName, fileName);
+    this.flush();
+    const { line, column, fileName, identifierName } = this.sourcePosition;
+    this.append(str, line, column, identifierName, fileName);
   }
 
   removeTrailingNewline() {
-    if (this._queue.length > 0 && this._queue[0][0] === "\n")
-      this._queue.shift();
+    if (this.queueList.length > 0 && this.queueList[0][0] === "\n")
+      this.queueList.shift();
   }
 
   removeLastSemicolon() {
-    if (this._queue.length > 0 && this._queue[0][0] === ";")
-      this._queue.shift();
+    if (this.queueList.length > 0 && this.queueList[0][0] === ";")
+      this.queueList.shift();
   }
 
   hasContent() {
-    return this._buffer.length > 0 || !!this._last;
+    return this.buffer.length > 0 || !!this.last;
   }
 
   endsWith(suffix) {
-    if (suffix.length == 1) {
+    if (suffix.length === 1) {
       let last;
-      if (this._queue.length > 0) {
-        const str = this._queue[0][0];
+      if (this.queueList.length > 0) {
+        const str = this.queueList[0][0];
         last = str[str.length - 1];
       } else {
-        last = this._last;
+        last = this.last;
       }
 
       return last === suffix;
     }
 
     const end =
-      this._last + this._queue.reduce((acc, item) => item[0] + acc, "");
+      this.last + this.queueList.reduce((acc, item) => item[0] + acc, "");
     if (suffix.length <= end.length) {
       return end.slice(-suffix.length) === suffix;
     }
@@ -83,40 +81,45 @@ export default class Buffer {
   }
 
   getCurrentLine() {
-    const extra = this._queue.reduce((acc, item) => item[0] + acc, "");
+    const extra = this.queueList.reduce((acc, item) => item[0] + acc, "");
 
     let count = 0;
-    for (let i = 0; i < extra.length; i++) {
-      if (extra[i] === "\n") count++;
+    for (let i = 0; i < extra.length; i += 1) {
+      if (extra[i] === "\n") count += 1;
     }
 
-    return this._position.line + count;
+    return this.position.line + count;
   }
 
   getCurrentColumn() {
-    const extra = this._queue.reduce((acc, item) => item[0] + acc, "");
+    const extra = this.queueList.reduce((acc, item) => item[0] + acc, "");
     const lastIndex = extra.lastIndexOf("\n");
 
     return lastIndex === -1
-      ? this._position.column + extra.length
+      ? this.position.column + extra.length
       : extra.length - 1 - lastIndex;
   }
 
-  _flush() {
+  flush() {
     let item;
-    while ((item = this._queue.pop())) this._append(...item);
+    do {
+      item = this.queueList.pop();
+      if (!item) {
+        this.internalAppend(...item);
+      }
+    } while (item);
   }
 
-  _append(str, line, column, identifierName, fileName) {
-    this._buffer.push(str);
-    this._last = str[str.length - 1];
+  internalAppend(str) {
+    this.buffer.push(str);
+    this.last = str[str.length - 1];
 
-    for (let i = 0; i < str.length; i++) {
-      if (str[i] == "\n") {
-        this._position.line++;
-        this._position.column = 0;
+    for (let i = 0; i < str.length; i += 1) {
+      if (str[i] === "\n") {
+        this.position.line += 1;
+        this.position.column = 0;
       } else {
-        this._position.column++;
+        this.position.column += 1;
       }
     }
   }
