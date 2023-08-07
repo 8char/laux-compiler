@@ -19,7 +19,7 @@
     "fs-jetpack": "^0.11.0",
     "lodash": "^4.17.4",
     "luamin": "^1.0.4",
-    "mocha": "^3.2.0",
+    "mocha": "^10.2.0",
     "underscore": "^1.8.3"
   },
   "devDependencies": {
@@ -37,7 +37,7 @@
     "semantic-release": "^21.0.7"
   },
   "scripts": {
-    "test": "mocha --reporter spec --compilers js:@babel/register",
+    "test": "mocha --reporter spec --require @babel/register",
     "lint": "prettier --check . && eslint .",
     "dev": "node dev.cjs workspace",
     "format": "prettier --write .",
