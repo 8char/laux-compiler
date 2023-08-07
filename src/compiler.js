@@ -1,13 +1,9 @@
-import _, { first, unique } from "underscore";
+import _ from "underscore";
 import extend from "extend";
 
-import { uniqueId } from "lodash";
 import * as b from "./builder";
 
-import parser from "./parser";
 import traverse from "./visitor";
-import Buffer from "./buffer";
-import CodeGenerator from "./codegenerator";
 import ClassTransformer from "./transformers/classes";
 
 import createConcatFunction from "./lau-functions/concat";
