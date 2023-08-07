@@ -376,7 +376,10 @@ export default class FileHandler {
       await this.transpileFile(fileObj);
     });
     watcher.on("unlink", async (filePath) => {
-      const relativePath = path.relative(absolutePath, filePath);
+      const relativePath = path.relative(
+        absolutePath,
+        filePath.replace(/\.laux$/, ".lua"),
+      );
       const fileObj = new CacheFile(relativePath);
 
       await this.removeFile(fileObj);
