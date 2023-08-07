@@ -1,21 +1,12 @@
-import _ from "underscore";
 import repeat from "lodash/repeat";
 import detectIndent from "detect-indent";
 
 import Buffer from "./buffer";
 import Whitespace from "./whitespace";
-import NodePath from "./path";
 
 function commaSeparator() {
   this.token(",");
   this.space();
-}
-
-function commaSeparatorNewline() {
-  this.token(",");
-  this.newline();
-
-  if (!this.endsWith("\n")) this.space();
 }
 
 /**
@@ -283,7 +274,7 @@ export default class CodeGenerator {
       this.word(node.name);
     },
 
-    SelfExpression(node) {
+    SelfExpression() {
       this.word("self");
     },
 
@@ -541,7 +532,7 @@ export default class CodeGenerator {
     ContinueIfStatement(node) {
       this.nodes.ShortcutIf.call(this, node, "continue");
     },
-    AwaitStatement(node) {
+    AwaitStatement() {
       this.word("awaitOutput()");
     },
   };
@@ -562,7 +553,7 @@ export default class CodeGenerator {
     this._whitespace = tokens.length > 0 ? new Whitespace(tokens) : null;
   }
 
-  normalizeOptions(code, opts, tokens) {
+  normalizeOptions(code, opts) {
     let indent = "  ";
     if (code && typeof code === "string") {
       const detected = detectIndent(code).indent;
@@ -604,7 +595,7 @@ export default class CodeGenerator {
       addNewlines: opts.addNewlines,
     };
 
-    for (let i = 0; i < nodes.length; i++) {
+    for (let i = 0; i < nodes.length; i += 1) {
       const node = nodes[i];
       if (!node) continue;
 
@@ -660,20 +651,20 @@ export default class CodeGenerator {
     if (typeof i !== "number") i = 1;
 
     i = Math.min(6, i);
-    if (this.endsWith("\n")) i--;
+    if (this.endsWith("\n")) i -= 1;
     if (i <= 0) return;
 
-    for (let j = 0; j < i; j++) {
+    for (let j = 0; j < i; j += 1) {
       this._newline();
     }
   }
 
   indent() {
-    this._indent++;
+    this._indent += 1;
   }
 
   dedent() {
-    this._indent--;
+    this._indent -= 1;
   }
 
   semicolon(force = false) {
@@ -707,10 +698,10 @@ export default class CodeGenerator {
     return this._needsWhitespace(node, "after");
   }
 
-  _needsWhitespace(node, type) {
+  _needsWhitespace(node) {
     if (!node) return 0;
 
-    if (node.type == "BlockStatement") return 1;
+    if (node.type === "BlockStatement") return 1;
   }
 
   _append(str, queue = false) {
@@ -740,7 +731,7 @@ export default class CodeGenerator {
 
       let needs = this.needsWhitespaceAfter;
       if (leading) needs = this.needsWhitespaceBefore;
-      if (needs.call(this, node)) lines++;
+      if (needs.call(this, node)) lines += 1;
 
       if (!this._buffer.hasContent()) lines = 0;
     }
