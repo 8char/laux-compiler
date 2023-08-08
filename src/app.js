@@ -97,4 +97,20 @@ commander
       });
   });
 
+commander.on("*", () => {
+  console.error(
+    chalk.red(
+      "Invalid command: %s\n\tSee --help for a list of available commands.",
+    ),
+    commander.args.join(" "),
+  );
+  process.exit(1);
+});
+
+// Parse the command line arguments
 commander.parse(process.argv);
+
+// Display help if no command is provided
+if (process.argv.length < 3) {
+  commander.outputHelp();
+}
