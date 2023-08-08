@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/8char/laux-compiler/compare/v1.5.0...v1.6.0) (2023-08-08)
+
+
+### Features
+
+* print the workspace settings on watch aswell ([8d6cfac](https://github.com/8char/laux-compiler/commit/8d6cfac7686217ceed871929f0d7e5257032aa94))
+
 # [1.5.0](https://github.com/8char/laux-compiler/compare/v1.4.1...v1.5.0) (2023-08-08)
 
 
