@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/8char/laux-compiler/compare/v1.3.3...v1.4.0) (2023-08-08)
+
+
+### Features
+
+* **cli:** add pretty text & details on single compile ([1c64bd8](https://github.com/8char/laux-compiler/commit/1c64bd8ffd41d4cf445f55d01befa8a766fb96f5))
+
 ## [1.3.3](https://github.com/8char/laux-compiler/compare/v1.3.2...v1.3.3) (2023-08-08)
 
 
