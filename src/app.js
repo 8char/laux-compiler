@@ -59,13 +59,14 @@ commander
       ),
       _options.release,
     );
-    FileHandler.create(workspace);
+    FileHandler.create(workspace, true);
   });
 
 commander
   .version("1.1.0")
   .command("workspace [file]")
   .option("-r --release", "Signal that this is a release build")
+  .option("-w --watch", "Watch the files for changes")
   .description(
     "use a specific json file as configuration. if no file is specified it tries to look at ./lauxconfig.json",
   )
@@ -86,7 +87,7 @@ commander
         }
 
         const workspace = new Workspace(data, _options.release);
-        FileHandler.create(workspace);
+        FileHandler.create(workspace, _options.watch);
       })
       .catch((e) => {
         console.log(

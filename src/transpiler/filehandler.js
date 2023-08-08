@@ -12,11 +12,11 @@ export default class FileHandler {
   // Disable transpiling at the start
   canTranspile = false;
 
-  static create(workspace) {
-    return new FileHandler(workspace);
+  static create(workspace, watch) {
+    return new FileHandler(workspace, watch);
   }
 
-  constructor(workspace) {
+  constructor(workspace, watch) {
     this.fileMap = new Map();
     this.mergeMap = new Map();
     this.transpileMap = new Map();
@@ -25,7 +25,12 @@ export default class FileHandler {
 
     const { error } = this.scanMerges();
     if (error === undefined) {
-      this.watchFiles();
+      if (watch) {
+        this.watchFiles();
+        return;
+      }
+
+      this.transpileOnce();
     } else {
       console.log(`Error: ${error.stack}`);
       // TODO: Give me better error message
@@ -89,7 +94,7 @@ export default class FileHandler {
   }
 
   async transpileAll() {
-    if (this.canTranspile === false) return;
+    if (this.canTranspile === false) return Promise.resolve();
 
     const transpiled = [];
 
@@ -140,89 +145,99 @@ export default class FileHandler {
       filesString[output] = str;
     });
 
-    this.transpileFiles(filesString);
+    return this.transpileFiles(filesString);
   }
 
   transpileFiles(filesString, change = false) {
-    Object.entries(filesString).forEach(([fileName, content]) => {
-      try {
-        const fileObj = this.fileMap.get(fileName);
-        if (fileObj !== undefined && fileObj.parse.ext === ".lua") {
-          this.copyFile(fileName);
+    const promises = Object.entries(filesString).map(
+      async ([fileName, content]) => {
+        try {
+          const fileObj = this.fileMap.get(fileName);
+          if (fileObj !== undefined && fileObj.parse.ext === ".lua") {
+            this.copyFile(fileName);
 
-          console.log(
-            `${chalk.magenta("LAUX")} ${chalk.gray("COPIED")} ${fileName}.lua`,
-          );
+            console.log(
+              `${chalk.magenta("LAUX")} ${chalk.gray(
+                "COPIED",
+              )} ${fileName}.lua`,
+            );
 
-          return; // Use 'return' instead of 'continue'
-        }
-
-        let elapsed = 0;
-        const timeStart = process.hrtime();
-        const compiledFile = Compile.compileCode(content, this.workspace);
-        this.transpileMap.set(fileName, compiledFile);
-        this.writeFile(fileName);
-        elapsed = process.hrtime(timeStart)[1] / 100000;
-
-        const roundedElapsed = Math.round(elapsed * 1000.0) / 1000.0;
-        const amount =
-          content.split("------------ Split Break -------------").length - 1;
-        let aggregate = "";
-        if (amount > 1) {
-          aggregate = `[${amount} files -> 1] `;
-        }
-        console.log(
-          `${chalk.magenta("LAUX")} ${
-            change ? chalk.cyan("CHANGE") : chalk.magenta("BUILT")
-          } ${fileName}.lua ${chalk.cyan(aggregate)}${chalk.green(
-            `${roundedElapsed}ms`,
-          )}`,
-        );
-      } catch (e) {
-        if (e instanceof SyntaxError) {
-          const lines = content.split(/\r?\n/);
-
-          const lineStart = Math.max(0, e.line - 3);
-          const lineEnd = Math.min(lines.length, e.line + 3);
-
-          console.log(
-            `${chalk.magenta("LAUX")} ${chalk.red(
-              "ERROR",
-            )} SyntaxError: ${fileName}: ${e.message}`,
-          );
-
-          for (let i = lineStart; i < lineEnd; i += 1) {
-            const line = lines[i];
-
-            const c1 = i + 1 === e.line ? ">" : " ";
-            const lineFillStr = new Array(
-              lineEnd.toString().length - (i + 1).toString().length + 1,
-            ).join(" ");
-            const lineStr = lineFillStr + (i + 1).toString();
-            const litLine = highlighter.highlight(line);
-            console.log(chalk.red(c1) + chalk.gray(` ${lineStr} | `) + litLine);
-
-            if (i + 1 === e.line) {
-              const offset = new Array(e.column + 1).join(" ");
-              console.log(
-                ` ${chalk.gray(
-                  `${new Array(lineStr.length + 2).join(" ")} | `,
-                )}${chalk.red(`${offset}^`)}`,
-              );
-            }
+            return; // Use 'return' instead of 'continue'
           }
 
-          console.log(e.stack);
-        } else {
+          let elapsed = 0;
+          const timeStart = process.hrtime();
+          const compiledFile = Compile.compileCode(content, this.workspace);
+          this.transpileMap.set(fileName, compiledFile);
+          await this.writeFile(fileName);
+          elapsed = process.hrtime(timeStart)[1] / 100000;
+
+          const roundedElapsed = Math.round(elapsed * 1000.0) / 1000.0;
+          const amount =
+            content.split("------------ Split Break -------------").length - 1;
+          let aggregate = "";
+          if (amount > 1) {
+            aggregate = `[${amount} files -> 1] `;
+          }
           console.log(
-            `${chalk.magenta("LAUX")} ${chalk.red("ERROR")} ${fileName}.laux:`,
+            `${chalk.magenta("LAUX")} ${
+              change ? chalk.cyan("CHANGE") : chalk.magenta("BUILT")
+            } ${fileName}.lua ${chalk.cyan(aggregate)}${chalk.green(
+              `${roundedElapsed}ms`,
+            )}`,
           );
-          console.log(
-            `${chalk.magenta("LAUX")} ${chalk.red("ERROR")} ${e.stack}`,
-          );
+        } catch (e) {
+          if (e instanceof SyntaxError) {
+            const lines = content.split(/\r?\n/);
+
+            const lineStart = Math.max(0, e.line - 3);
+            const lineEnd = Math.min(lines.length, e.line + 3);
+
+            console.log(
+              `${chalk.magenta("LAUX")} ${chalk.red(
+                "ERROR",
+              )} SyntaxError: ${fileName}: ${e.message}`,
+            );
+
+            for (let i = lineStart; i < lineEnd; i += 1) {
+              const line = lines[i];
+
+              const c1 = i + 1 === e.line ? ">" : " ";
+              const lineFillStr = new Array(
+                lineEnd.toString().length - (i + 1).toString().length + 1,
+              ).join(" ");
+              const lineStr = lineFillStr + (i + 1).toString();
+              const litLine = highlighter.highlight(line);
+              console.log(
+                chalk.red(c1) + chalk.gray(` ${lineStr} | `) + litLine,
+              );
+
+              if (i + 1 === e.line) {
+                const offset = new Array(e.column + 1).join(" ");
+                console.log(
+                  ` ${chalk.gray(
+                    `${new Array(lineStr.length + 2).join(" ")} | `,
+                  )}${chalk.red(`${offset}^`)}`,
+                );
+              }
+            }
+
+            console.log(e.stack);
+          } else {
+            console.log(
+              `${chalk.magenta("LAUX")} ${chalk.red(
+                "ERROR",
+              )} ${fileName}.laux:`,
+            );
+            console.log(
+              `${chalk.magenta("LAUX")} ${chalk.red("ERROR")} ${e.stack}`,
+            );
+          }
         }
-      }
-    });
+      },
+    );
+
+    return Promise.all(promises);
   }
 
   async copyFile(fileName) {
@@ -268,18 +283,29 @@ export default class FileHandler {
         this.workspace.getAbsoluteOutput(),
         fileName,
       );
+
+      const writePromises = [];
       if (this.workspace.getAST()) {
-        jetpack.writeAsync(
-          `${compiledPathNoExt}.ast.json`,
-          JSON.stringify(compiledFile.ast, null, 2),
+        writePromises.push(
+          jetpack.writeAsync(
+            `${compiledPathNoExt}.ast.json`,
+            JSON.stringify(compiledFile.ast, null, 2),
+          ),
         );
-        jetpack.writeAsync(
-          `${compiledPathNoExt}.ast_compiled.json`,
-          JSON.stringify(compiledFile.compiledAST, null, 2),
+
+        writePromises.push(
+          jetpack.writeAsync(
+            `${compiledPathNoExt}.ast_compiled.json`,
+            JSON.stringify(compiledFile.compiledAST, null, 2),
+          ),
         );
       }
 
-      jetpack.writeAsync(`${compiledPathNoExt}.lua`, result.code);
+      writePromises.push(
+        jetpack.writeAsync(`${compiledPathNoExt}.lua`, result.code),
+      );
+
+      return Promise.all(writePromises);
     } catch (e) {
       console.error(`Error: ${e.stack}`);
     }
@@ -352,6 +378,29 @@ export default class FileHandler {
     this.transpileFiles(filesString, true);
   }
 
+  async transpileOnce() {
+    this.canTranspile = true;
+
+    const files = glob.sync("**/*.{lua,laux}", {
+      dot: true,
+      cwd: this.workspace.getAbsoluteInput(),
+      absolute: true,
+    });
+
+    files.forEach((filePath) => {
+      const relativePath = path.relative(
+        this.workspace.getAbsoluteInput(),
+        filePath,
+      );
+
+      const fileObj = new CacheFile(relativePath);
+      this.fileMap.set(fileObj.getCleanPath(), fileObj);
+    });
+
+    await this.transpileAll();
+    process.exit(0);
+  }
+
   watchFiles() {
     const absolutePath = this.workspace.getAbsoluteInput();
     const watcher = chokidar.watch(path.join(absolutePath, "**/*.{lua,laux}"));
@@ -391,7 +440,7 @@ export default class FileHandler {
     // Give it a second to add everything
     setTimeout(async () => {
       this.canTranspile = true;
-      this.transpileAll();
+      await this.transpileAll();
     }, 1000);
   }
 }
