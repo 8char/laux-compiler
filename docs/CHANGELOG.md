@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/8char/laux-compiler/compare/v1.4.1...v1.5.0) (2023-08-08)
+
+
+### Features
+
+* add support for file headers ([158604c](https://github.com/8char/laux-compiler/commit/158604c11ceec7fe7f193d2fd8ecc58bcf9c97c3))
+
 ## [1.4.1](https://github.com/8char/laux-compiler/compare/v1.4.0...v1.4.1) (2023-08-08)
 
 
