@@ -8,6 +8,11 @@ import CodeGenerator from "../codegenerator";
 import CacheFile from "./fileCache";
 import Compile from "./compile";
 
+const printIndentedLines = (inputString) =>
+  inputString.split("\n").forEach((line) => {
+    console.log(`\t\t${chalk.yellow(line)}`);
+  });
+
 export default class FileHandler {
   // Disable transpiling at the start
   canTranspile = false;
@@ -301,9 +306,11 @@ export default class FileHandler {
         );
       }
 
-      writePromises.push(
-        jetpack.writeAsync(`${compiledPathNoExt}.lua`, result.code),
-      );
+      const code = this.workspace.header
+        ? `${this.workspace.header}\n${result.code}`
+        : result.code;
+
+      writePromises.push(jetpack.writeAsync(`${compiledPathNoExt}.lua`, code));
 
       return Promise.all(writePromises);
     } catch (e) {
@@ -430,6 +437,10 @@ export default class FileHandler {
       `\t• Indentation size (spaces): ${chalk.yellow(workspace.indent)}`,
     );
     console.log(`\t• Is release build?: ${chalk.yellow(workspace.release)}`);
+    if (workspace.header) {
+      console.log(`\t• File header text:`);
+      printIndentedLines(workspace.header);
+    }
 
     console.log();
     await this.transpileAll();

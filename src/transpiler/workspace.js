@@ -20,6 +20,7 @@ export default class Workspace {
     this.minify = json.minify || false;
     this.obfuscate = json.obfuscate || false;
     this.indent = json.indent || 4;
+    this.header = json.header;
     this.release = release;
   }
 

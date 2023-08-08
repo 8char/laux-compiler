@@ -3,6 +3,7 @@
     "input": "./laux",
     "output": "./lua"
   },
+  "header": "--[[\n    This LUA file is protected under copyright\n    © 2023-2025 Matteo \"Atlas\" Krans Dusic\n]]--",
   "merges": [],
   "debug": true,
   "ast": true

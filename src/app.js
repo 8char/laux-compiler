@@ -37,7 +37,7 @@ commander
   .option("-o, --obfuscate", "Obfuscate compiled code.")
   .option("--indent <size>", "The size of one indent.", parseInt)
   .option(
-    "--header",
+    "--header <header>",
     "Header template to place on the top of each compiled file.",
   )
   .action((dir, out, _options) => {
