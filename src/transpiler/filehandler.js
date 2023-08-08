@@ -308,6 +308,7 @@ export default class FileHandler {
       return Promise.all(writePromises);
     } catch (e) {
       console.error(`Error: ${e.stack}`);
+      return undefined;
     }
   }
 
