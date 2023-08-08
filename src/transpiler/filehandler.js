@@ -397,7 +397,50 @@ export default class FileHandler {
       this.fileMap.set(fileObj.getCleanPath(), fileObj);
     });
 
+    console.log(
+      `${chalk.magenta(
+        "LAUX",
+      )} Starting a final build process with the following options:`,
+    );
+
+    let elapsed = 0;
+    const timeStart = process.hrtime();
+
+    const { workspace } = this;
+
+    console.log(
+      `\t• Ammount of merges: ${chalk.yellow(`${workspace.merges.length}x`)}`,
+    );
+    console.log(`\t• LAUX input directory: ${chalk.yellow(workspace.input)}`);
+    console.log(`\t• LAUX output directory: ${chalk.yellow(workspace.output)}`);
+    console.log(`\t• Use workspace debug?: ${chalk.yellow(workspace.debug)}`);
+    console.log(
+      `\t• Include the LUA & LAUX AST's?: ${chalk.yellow(workspace.ast)}`,
+    );
+    console.log(
+      `\t• Minify resulting code?: ${chalk.yellow(workspace.minify)}`,
+    );
+    console.log(
+      `\t• Obuscate resulting code?: ${chalk.yellow(workspace.obfuscate)}`,
+    );
+    console.log(
+      `\t• Indentation size (spaces): ${chalk.yellow(workspace.indent)}`,
+    );
+    console.log(`\t• Is release build?: ${chalk.yellow(workspace.release)}`);
+
+    console.log();
     await this.transpileAll();
+
+    elapsed = process.hrtime(timeStart)[1] / 100000;
+
+    const roundedElapsed = Math.round(elapsed * 1000.0) / 1000.0;
+    console.log(
+      `${chalk.magenta("LAUX")} ${chalk.green(
+        "SUCCESS",
+      )} Finished building files. Took a total of ${chalk.green(
+        `${roundedElapsed}ms`,
+      )}, exiting successfully...`,
+    );
     process.exit(0);
   }
 
