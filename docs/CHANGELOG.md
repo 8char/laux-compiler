@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/8char/laux-compiler/compare/v1.4.0...v1.4.1) (2023-08-08)
+
+
+### Bug Fixes
+
+* **cli:** default the merges count ([e4e533d](https://github.com/8char/laux-compiler/commit/e4e533de684d8c7b4e37012d7e87c0330b734901))
+
 # [1.4.0](https://github.com/8char/laux-compiler/compare/v1.3.3...v1.4.0) (2023-08-08)
 
 
