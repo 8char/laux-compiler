@@ -3,6 +3,7 @@ import chokidar from "chokidar";
 import chalk from "chalk";
 import jetpack from "fs-jetpack";
 import glob from "fast-glob";
+import repeat from "lodash/repeat";
 import highlighter from "../highlighter";
 import CodeGenerator from "../codegenerator";
 import CacheFile from "./fileCache";
@@ -386,6 +387,62 @@ export default class FileHandler {
     this.transpileFiles(filesString, true);
   }
 
+  printWorkspaceSettings() {
+    const { workspace } = this;
+
+    console.log(
+      `${chalk.magenta(
+        "LAUX",
+      )} Starting transpilation process with the following options:`,
+    );
+
+    console.log(
+      `\t• LAUX input files directory: ${chalk.yellow(workspace.input)}`,
+    );
+    console.log(
+      `\t• LUA output files directory: ${chalk.yellow(workspace.output)}`,
+    );
+    console.log(
+      `\t• Indentation size (spaces): ${chalk.yellow(
+        `${repeat("▓", workspace.indent)} (${workspace.indent})`,
+      )}`,
+    );
+    console.log(
+      `\t• Ammount of merges: ${chalk.yellow(
+        `${workspace.merges.length ?? 0}x`,
+      )}`,
+    );
+    console.log(
+      `\t• Use workspace debug?: ${chalk.yellow(
+        workspace.debug ? "✔️" : "❌",
+      )}`,
+    );
+    console.log(
+      `\t• Include the LUA & LAUX AST's?: ${chalk.yellow(
+        workspace.ast ? "✔️" : "❌",
+      )}`,
+    );
+    console.log(
+      `\t• Minify resulting code?: ${chalk.yellow(
+        workspace.minify ? "✔️" : "❌",
+      )}`,
+    );
+    console.log(
+      `\t• Obuscate resulting code?: ${chalk.yellow(
+        workspace.obfuscate ? "✔️" : "❌",
+      )}`,
+    );
+    console.log(
+      `\t• Is release build?: ${chalk.yellow(workspace.release ? "✔️" : "❌")}`,
+    );
+    if (workspace.header) {
+      console.log(`\t• File header text:`);
+      printIndentedLines(workspace.header);
+    }
+
+    console.log();
+  }
+
   async transpileOnce() {
     this.canTranspile = true;
 
@@ -405,44 +462,11 @@ export default class FileHandler {
       this.fileMap.set(fileObj.getCleanPath(), fileObj);
     });
 
-    console.log(
-      `${chalk.magenta(
-        "LAUX",
-      )} Starting a final build process with the following options:`,
-    );
-
     let elapsed = 0;
     const timeStart = process.hrtime();
 
-    const { workspace } = this;
+    this.printWorkspaceSettings();
 
-    console.log(
-      `\t• Ammount of merges: ${chalk.yellow(
-        `${workspace.merges.length ?? 0}x`,
-      )}`,
-    );
-    console.log(`\t• LAUX input directory: ${chalk.yellow(workspace.input)}`);
-    console.log(`\t• LAUX output directory: ${chalk.yellow(workspace.output)}`);
-    console.log(`\t• Use workspace debug?: ${chalk.yellow(workspace.debug)}`);
-    console.log(
-      `\t• Include the LUA & LAUX AST's?: ${chalk.yellow(workspace.ast)}`,
-    );
-    console.log(
-      `\t• Minify resulting code?: ${chalk.yellow(workspace.minify)}`,
-    );
-    console.log(
-      `\t• Obuscate resulting code?: ${chalk.yellow(workspace.obfuscate)}`,
-    );
-    console.log(
-      `\t• Indentation size (spaces): ${chalk.yellow(workspace.indent)}`,
-    );
-    console.log(`\t• Is release build?: ${chalk.yellow(workspace.release)}`);
-    if (workspace.header) {
-      console.log(`\t• File header text:`);
-      printIndentedLines(workspace.header);
-    }
-
-    console.log();
     await this.transpileAll();
 
     elapsed = process.hrtime(timeStart)[1] / 100000;
@@ -459,6 +483,8 @@ export default class FileHandler {
   }
 
   watchFiles() {
+    this.printWorkspaceSettings();
+
     const absolutePath = this.workspace.getAbsoluteInput();
     const watcher = chokidar.watch(path.join(absolutePath, "**/*.{lua,laux}"));
 
