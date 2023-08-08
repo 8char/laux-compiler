@@ -409,7 +409,9 @@ export default class FileHandler {
     const { workspace } = this;
 
     console.log(
-      `\t• Ammount of merges: ${chalk.yellow(`${workspace.merges.length}x`)}`,
+      `\t• Ammount of merges: ${chalk.yellow(
+        `${workspace.merges.length ?? 0}x`,
+      )}`,
     );
     console.log(`\t• LAUX input directory: ${chalk.yellow(workspace.input)}`);
     console.log(`\t• LAUX output directory: ${chalk.yellow(workspace.output)}`);
