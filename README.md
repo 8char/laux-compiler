@@ -79,6 +79,20 @@ To actually use the merge features, you would have to use the release option, wh
 
 # What does it add?
 
+- [Functions](#functions)
+- [Decorators](#decorators)
+- [Types](#types)
+- [Mutations](#mutations)
+- [Shortcut Expressions](#shortcut-expressions)
+- [Classes](#classes)
+  - [Getters and Setters](#getters-and-setters)
+- [Safe member navigator](#safe-member-navigator)
+- [Import Statement](#import-statement)
+- [Spread operator](#spread-operator)
+- [Deconstructing](#deconstructing)
+- [For of statement](#for-of-statement)
+- [Formated string](#formated-string)
+
 ## Functions
 
 LAUX adds fat arrows & thin arrows.
@@ -102,7 +116,9 @@ Thin arrow is essentially just a fat arrow, but it automatically adds self, just
 ## Decorators
 
 LAUX adds decorators which can mutate functions to allow for things such as deprecation, singeltons, registries, mixin functionality, memoization, validation, rate limiting, caching, authentication/authorization, logging, etc...
-_You can currently only have one decorator per _function, however, you can_ combine them into one larger decorator_
+
+> [!NOTE]
+> You can currently only have one decorator per function, however, you can combine them into one larger decorator
 
 ```lua
 -- These deprecated functions can be defined in
@@ -187,12 +203,18 @@ end
 
 LAUX adds mutations. Those are just simple shortcuts
 
+> [!NOTE]
+> `x--` doesn't exist for obvious reasons (comments).
+
+> [!NOTE]
+> The prefix incrementation: `++x` doesn't exist.
+
 ```lua
 x += 5 -- x = x + 5
 x *= 2 -- x = x * 2
 x /= 2 -- x = x / 2
 x++ -- x = x + 1
-x -= 1 -- x = x - 1. Notice x-- doesn't exist
+x -= 1 -- x = x - 1.
 x ||= 2 -- x = x or 2
 x ..= "me" -- x = x .. "me"
 x %= 2 -- x = x % 2
@@ -219,6 +241,9 @@ Syntax
 ```
 
 Example
+> [!NOTE]
+> If we are not using a public class we need to add __type() function.\
+> This is to avoid overlapping names for type checking
 
 ```lua
 class Foo
@@ -234,8 +259,7 @@ class Foo
   setFoobar(val: string) self.foobar = val end
   getFoobar() return self.foobar end
 
-  -- If we are not using a public class we need to add __type() function.
-  -- This is to avoid overlapping names for type checking
+  -- needed in non public classes
   __type()
     return "MyAddon.Foo"
   end
@@ -304,8 +328,6 @@ end
 
 local b = Bar()
 ```
-
-
 </blockquote>
 
 
