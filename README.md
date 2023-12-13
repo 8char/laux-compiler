@@ -245,7 +245,7 @@ end
 local foo1 = Foo()
 ```
 
-Now if we wish, we can extend upon it
+Now if we wish, we can extend it
 
 ```lua
 class Bar extends Foo
@@ -271,6 +271,44 @@ public class AtlasShop.Items.Health extends AtlasShop.Item
   -- __type will automatically return the name of the class
 end
 ```
+
+<blockquote>
+
+[!IMPORTANT]
+A class can implicitly define a default constructor.
+But, when inheriting from a default constructor class you must create a constructor to call `super()` **if you define a field**, it isn't done implicitly.
+```lua
+class Foo
+  var = 5
+end
+
+class Bar extends Foo
+
+end
+
+local b = Bar()
+```
+
+This will create an error. To fix it create a constructor.
+
+```lua
+class Foo
+  var = 5
+end
+
+class Bar extends Foo
+  constructor()
+    super()
+  end
+end
+
+local b = Bar()
+```
+
+
+</blockquote>
+
+
 
 ### Getters and Setters
 
