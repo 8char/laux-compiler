@@ -7,7 +7,7 @@
   <sup>( LAUX )</sup>
   <p align="center">
     This is a fork of LAU made by <a href="https://github.com/alexanderarvidsson" target="_blank">Metamist (Alexander Arvidsson)</a>
-    LAU as a project is dead. This fork is an attempt to revitalise Metamist's project, with a few changes to syntax & functionality.
+    LAU as a project is dead. This fork is an attempt to revitalize Metamist's project, with a few changes to syntax & functionality.
     <br />
     <br />
     <a href="https://github.com/8char/laux-compiler/issues">Report Bug</a>
@@ -30,7 +30,7 @@ Open up a terminal of your choice, and type this.
 > npm i -g laux-compiler
 ```
 
-To transpile you simply go the folder your project belongs to
+To transpile you simply go to the folder your project belongs to
 
 ```bash
 > lauxc watch ./laux ./lua
@@ -40,7 +40,7 @@ To transpile you simply go the folder your project belongs to
 
 There's also an option to use workspaces, which simply means using a configuration file. The config file must be `lauxconfig.json` and be located in the root folder.
 
-This allows you to use a lot more options, of which one of the intersting ones are merges. You can merge multiple files into 1 single output file, which are very useful for releases.
+This allows you to use a lot more options, of which one of the interesting ones is merges. You can merge multiple files into 1 single output file, which is very useful for releases.
 
 An example of a config file would be this.
 
@@ -79,6 +79,20 @@ To actually use the merge features, you would have to use the release option, wh
 
 # What does it add?
 
+- [Functions](#functions)
+- [Decorators](#decorators)
+- [Types](#types)
+- [Mutations](#mutations)
+- [Shortcut Expressions](#shortcut-expressions)
+- [Classes](#classes)
+  - [Getters and Setters](#getters-and-setters)
+- [Safe member navigator](#safe-member-navigator)
+- [Import Statement](#import-statement)
+- [Spread operator](#spread-operator)
+- [Deconstructing](#deconstructing)
+- [For of statement](#for-of-statement)
+- [Formated string](#formated-string)
+
 ## Functions
 
 LAUX adds fat arrows & thin arrows.
@@ -97,12 +111,14 @@ local Foo = {}
 Foo.Bar = () -> print(self) end -- Foo.Bar = function(self) print(self) end
 ```
 
-Thin arrow is essentially just a fat arrow, but it automatically adds self, just like : adds self automatically in contrast to . in default Lua.
+Thin arrow is essentially just a fat arrow, but it automatically adds self, just like: adds self automatically in contrast to <code>.</code> in default Lua.
 
 ## Decorators
 
 LAUX adds decorators which can mutate functions to allow for things such as deprecation, singeltons, registries, mixin functionality, memoization, validation, rate limiting, caching, authentication/authorization, logging, etc...
-_You can currently only have one decorator per function, however you can combine them in to one larger decorator_
+
+> [!NOTE]
+> You can currently only have one decorator per function, however, you can combine them into one larger decorator
 
 ```lua
 -- These deprecated functions can be defined in
@@ -148,8 +164,8 @@ end
 
 ## Types
 
-**This is real time type checking, so don't run it in something that gets run A TON, like every frame**
-_Currently doens't work with arrow functions, fixing later_
+**This is real-time type checking, so don't run it in something that gets run A TON, like every frame**
+_Currently doesn't work with arrow functions, fixing later_
 
 ```lua
 function Foo(bar: string)
@@ -187,12 +203,18 @@ end
 
 LAUX adds mutations. Those are just simple shortcuts
 
+> [!NOTE]
+> `x--` doesn't exist for obvious reasons (comments).
+
+> [!NOTE]
+> The prefix incrementation: `++x` doesn't exist.
+
 ```lua
 x += 5 -- x = x + 5
 x *= 2 -- x = x * 2
 x /= 2 -- x = x / 2
 x++ -- x = x + 1
-x -= 1 -- x = x - 1. Notice x-- doesn't exist
+x -= 1 -- x = x - 1.
 x ||= 2 -- x = x or 2
 x ..= "me" -- x = x .. "me"
 x %= 2 -- x = x % 2
@@ -210,7 +232,7 @@ continueif i > 8 -- if (i > 8) then continue end
 
 ## Classes
 
-LAUX adds JavaScript like classes. I assume you already know what a class is.
+LAUX adds JavaScript-like classes. I assume you already know what a class is.
 
 Syntax
 
@@ -219,6 +241,9 @@ Syntax
 ```
 
 Example
+> [!NOTE]
+> If we are not using a public class we need to add __type() function.\
+> This is to avoid overlapping names for type checking
 
 ```lua
 class Foo
@@ -234,8 +259,7 @@ class Foo
   setFoobar(val: string) self.foobar = val end
   getFoobar() return self.foobar end
 
-  -- If we are not using a public class we need to add __type() function.
-  -- This is to avoid overlapping names for type checking
+  -- needed in non public classes
   __type()
     return "MyAddon.Foo"
   end
@@ -245,7 +269,7 @@ end
 local foo1 = Foo()
 ```
 
-Now if we wish, we can extend upon it
+Now if we wish, we can extend it
 
 ```lua
 class Bar extends Foo
@@ -272,9 +296,71 @@ public class AtlasShop.Items.Health extends AtlasShop.Item
 end
 ```
 
+<blockquote>
+
+[!IMPORTANT]
+A class can implicitly define a default constructor.
+But, when inheriting from a default constructor class you must create a constructor to call `super()` **if you define a field**, it isn't done implicitly.
+```lua
+class Foo
+  var = 5
+end
+
+class Bar extends Foo
+
+end
+
+local b = Bar()
+```
+
+This will create an error. To fix it create a constructor.
+
+```lua
+class Foo
+  var = 5
+end
+
+class Bar extends Foo
+  constructor()
+    super()
+  end
+end
+
+local b = Bar()
+```
+</blockquote>
+
+
+
+### Getters and Setters
+
+Laux has syntactic sugar for getters and setters. By using `_get` and/or `_set`.
+
+```lua
+class Foo
+  _get _set variable
+  _get secondVariable
+end
+```
+The resulting lua corresponding to the methods is
+```lua
+setVariable = function(self, variable)
+    self.variable = variable
+    return self
+end,
+getVariable = function(self)
+    return self.variable
+end,
+getSecondVariable = function(self)
+    return self.secondVariable
+end,
+```
+
+
+
 ## Safe member navigator
 
-LAUX adds a safe member navigatior. This allows you to use index something in a table without having to check if an element exists.
+LAUX adds a safe member navigator. This allows you to index something in a table without having to check if an element exists.
 
 LAUX code
 
@@ -294,7 +380,7 @@ end
 
 ## Import Statement
 
-The import statement allows for importing of members of an object. The import statement itself doesn't transpile down in to anything, however what it does is it adds the parent object before each index of it in code. Heres an example:
+The import statement allows for the importing of members of an object. The import statement itself doesn't transpile down into anything, however, what it does is it adds the parent object before each index of it in code. Here's an example:
 
 ```lua
 import print, warn, log from AtlasUI
@@ -314,7 +400,7 @@ AtlasUI.log("Hello there!")
 
 ## Spread operator
 
-This is the same operator found in JavaScript. It functions like table.concat/unpack.
+This is the same operator found in JavaScript. It functions like `table.concat`/`table.unpack`.
 
 ```lua
 local a = { 2, 3 }
@@ -351,7 +437,7 @@ for i, v of tbl do
 end
 ```
 
-There is no ipairs equivalent of this.
+*There is no ipairs equivalent of this.*
 
 ## Formated string
 
